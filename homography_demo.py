@@ -15,9 +15,21 @@
 import PIL as pil
 from PIL import Image
 import numpy as np
-from math import cos, sin, tan
+from math import cos, pi, sin, tan
 
-def get_homography(proj_coors, screen_coors, width=None, height=None):
+""" Compute the Direct Linear Transform (DLT) and obtain the homography matrix
+from the following steps:
+
+    1. For each correspondence xi <-> xi', compute the first two rows of Ai
+    2. Assemble n 2x9 matrices Ai into a single 2nx9 matrix A
+    3. Obtain the singular value decomposition of A
+    4. Solution for h is the eigenvector corresponding to the smallest
+       eigenvalue of A.T A
+    5. Determine H from h
+
+    NOTE: According to one presentation I found, the algorithm implemented below
+    might not be using the correct matrix for DLT... need to check this more """
+def get_homography(proj_coors, screen_coors):
     if len(proj_coors) != 4 or not all(len(e) == 2 for e in proj_coors):
         raise ValueError("Arg `proj_coors` should be contain (x,y) for 4 " \
                          "coordinates in the projector space")
@@ -26,10 +38,6 @@ def get_homography(proj_coors, screen_coors, width=None, height=None):
         raise ValueError("Arg `screen_coors` should be contain (X,Y) for 4 " \
                          "coordinates in the screen space")
 
-    if width and height:
-        proj_coors = ((x / width, y / height) for x, y in proj_coors)
-        screen_coors = ((x / width, y / width) for x, y in screen_coors)
-
     (x1, y1), (x2, y2), (x3, y3), (x4, y4) = proj_coors
     (X1, Y1), (X2, Y2), (X3, Y3), (X4, Y4) = screen_coors
 
@@ -37,13 +45,10 @@ def get_homography(proj_coors, screen_coors, width=None, height=None):
 
     A[0, :] = X1, Y1, 1, 0, 0, 0, -X1 * x1, -Y1 * x1, -x1
     A[1, :] = 0, 0, 0, X1, Y1, 1, -X1 * y1, -Y1 * y1, -y1
-
     A[2, :] = X2, Y2, 1, 0, 0, 0, -X2 * x2, -Y2 * x2, -x2
     A[3, :] = 0, 0, 0, X2, Y2, 1, -X2 * y2, -Y2 * y2, -y2
-
     A[4, :] = X3, Y3, 1, 0, 0, 0, -X3 * x3, -Y3 * x3, -x3
     A[5, :] = 0, 0, 0, X3, Y3, 1, -X3 * y3, -Y3 * y3, -y3
-
     A[6, :] = X4, Y4, 1, 0, 0, 0, -X4 * x4, -Y4 * x4, -x4
     A[7, :] = 0, 0, 0, X4, Y4, 1, -X4 * y4, -Y4 * y4, -y4
 
@@ -214,8 +219,21 @@ def apply_transformation(a,b,c,d,e,f,g,h,name):
 
 def main():
     np.set_printoptions(precision=2, threshold=25, suppress=True)
-    proj_coors = (0, 0), (0, 640), (480, 0), (640, 480)
-    screen_coors = (64, 0), (576, 0), (480, 0), (480, 576)
+
+    depth = 1000
+    alpha_v = pi / 12
+    proj_coors = [
+            (0, 0), (0, 640),
+            (480, 0), (640, 480),
+            ]
+
+    screen_coors = []
+    for xp, yp in proj_coors:
+        xyz, (xk_prime, yk_prime, _)  = vertical_tilt(xp, yp, depth, alpha_v)
+        print("Calculated mapping ({}, {})->({}, {})".format(xp, yp, xk_prime,
+                                                             yk_prime))
+
+        screen_coors.append((xk_prime, yk_prime))
 
     get_homography(proj_coors, screen_coors)
 
