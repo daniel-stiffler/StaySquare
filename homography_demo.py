@@ -6,11 +6,16 @@
 # KEYSTONE CORRECTION DERIVED FROM THE PARAMETERS OF PROJECTORS
 # https://patentimages.storage.googleapis.com/9e/8d/78/5056def0bb7426/US6997563.pdf
 #
+# VLSI ARCHITECTURE FOR ELECTRONIC CORRECTION OF OPTICAL DISTORTIONS
+# http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.4.8788&rep=rep1&type=pdf
+#
+# FPGA ARCHITECTURE FOR REAL-TIME BARREL DISTORTION CORRECTION OF COLOUR IMAGES
+# https://web.stanford.edu/~hblasins/Publications/ICME2011.pdf
 
 import PIL as pil
 from PIL import Image
 import numpy as np
-from math import cos, sin
+from math import cos, sin, tan
 
 def get_homography(proj_coors, screen_coors, width=None, height=None):
     if len(proj_coors) != 4 or not all(len(e) == 2 for e in proj_coors):
@@ -107,19 +112,76 @@ def proj_corners2(x, y, d, vert_tilt, horiz_tilt, offset, width=1920,
 
     return x_proj, y_proj
 
-def vertical_tilt(x, y, z, tilt):
-    x_proj = cos(tilt) * x - sin(tilt) * z
-    y_proj = y
-    z_proj = sin(tilt) * x + cos(tilt) * z
+""" Transform a pair (xp, yp) of undistorted coordinates into the corresponding
+pair (xk, yk) in the plane of the tilted screen. """
 
-    return x_proj, y_proj, z_proj
+def vertical_tilt(xp, yp, depth, alpha_v):
+    # Calculate the distorted coordinates in 3d-space, not accounting for the
+    # varying depth of the screen with respect to the lens
+    xk = xp / (1 - (yp / depth) * tan(alpha_v))
+    yk = yp / (1 - (yp / depth) * tan(alpha_v))
+    zk = yp * tan(alpha_v) / (1 - (yp / depth) * tan(alpha_v))
 
-def horizontal_tilt(x, y, z, tilt):
-    x_proj = cos(tilt) * x + sin(tilt) * y
-    y_proj = -sin(tilt) * x + cos(tilt) * y
-    z_proj = z
+    # Perform the same calculation as before, but now transform the coordinates
+    # from the original system into the coordinate system of hte tilted screen
+    # by applying a rotation matrix
+    #
+    # Rv = [[1, 0,          0],
+    #       [0, cos(alpha_v), -sin(alpha_v)],
+    #       [0, sin(alpha_v), cos(alpha_v)]]
+    xk_prime = xp * cos(alpha_v) / (cos(alpha_v) - (yp / depth) * sin(alpha_v))
+    yk_prime = yp / (cos(alpha_v) - (yp / depth) * sin(alpha_v))
+    zk_prime = 0 # Necessary condition, as the screen is a plane
 
-    return x_proj, y_proj, z_proj
+    return (xk, yk, zk), (xk_prime, yk_prime, zk_prime)
+
+def both_tilt(xp, yp, zp, depth, alpha_h, alpha_v):
+    # Calculate the distorted coordinates in 3d-space, not accounting for the
+    # varying depth of the screen with respect to the lens
+    xk_numer = xp
+    xk_denom = 1 - \
+               (xp / depth) * tan(alpha_h) - \
+               (yp / depth) * tan(alpha_v) / cos(alpha_h)
+    xk = xk_numer / xk_denom
+
+    yk_numer = yp
+    yk_denom = 1 - \
+               (xp / depth) * tan(alpha_h) - \
+               (yp / depth) * tan(alpha_v) / cos(alpha_h)
+    yk = yk_numer / yk_denom
+
+    zk_numer = depth
+    zk_denom = 1 - \
+               (xp / depth) * tan(alpha_h) - \
+               (yp / depth) * tan(alpha_v) / cos(alpha_h)
+    zk = -depth + zk_numer / zk_denom
+
+    # Perform the same calculation as before, but now transform the coordinates
+    # from the original system into the coordinate system of hte tilted screen
+    # by applying a rotation matrix
+    #
+    # Rv = [[1, 0,          0],
+    #       [0, cos(alpha_v), -sin(alpha_v)],
+    #       [0, sin(alpha_v), cos(alpha_v)]]
+    #
+    # Rh = [[cos(alpha_h), 0, -sin(alpha_h)],
+    #       [0,            1, 0],
+    #       [sin(alpha_h), 0, cos(alpha_h)]]
+    xk_prime_numer = xp * cos(alpha_v) + \
+                     yp * sin(alpha_v) * sin(alpha_h)
+    xk_prime_denom = cos(alpha_v) * cos(alpha_h) - \
+                     (xp / depth) * cos(alpha_v) * sin(alpha_h) - \
+                     (yp / depth) * sin(alpha_v)
+    xk_prime = xk_prime_numer / xk_prime_denom
+
+    yk_prime_numer = yp * cos(alpha_h)
+    yk_prime_denom = cos(alpha_v) * cos(alpha_h) - \
+                     (xp / depth) * cos(alpha_v) * sin(alpha_h) - \
+                     (yp / depth) * sin(alpha_v)
+    yk_prime = yk_prime_numer / yk_prime_denom
+    zk_prime = 0 # Necessary condition, as the screen is a plane
+
+    return (xk, yk, zk), (xk_prime, yk_prime, zk_prime)
 
 def apply_transformation(a,b,c,d,e,f,g,h,name):
 
