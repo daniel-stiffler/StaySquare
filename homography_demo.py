@@ -3,6 +3,7 @@ from math import cos, pi, sin, tan
 import numpy as np
 import PIL as pil
 from PIL import Image
+import os # for separator
 
 """ Compute the Direct Linear Transform (DLT) and obtain the homography matrix
 from the following steps:
@@ -84,7 +85,7 @@ def proj_corners1(x, y, d, vert_tilt, horiz_tilt, offset, width=1920,
 """ Some projectors using a platform that can both rotate left and right and
 swivel up and down. Such a projector is not performing rotation in the original
 XZ-plane: instead, it is rotating horizontally in a tilted plane. Thus, to
-determine the “true” horizontal rotation (relative to the original XZ plane)
+determine the true horizontal rotation (relative to the original XZ plane)
 requires compensating for the fact that the projector has also been tilted
 vertically. """
 def proj_corners2(x, y, d, vert_tilt, horiz_tilt, offset, width=1920,
@@ -176,40 +177,40 @@ def both_tilt(xp, yp, depth, alpha_h, alpha_v):
 
     return (xk, yk, zk), (xk_prime, yk_prime, zk_prime)
 
-def clamp(x, lo, hi):
-    if x < lo: return int(lo + 0.5)
-    elif x > hi: return int(hi + 0.5)
-    else: return int(x + 0.5);
-
 def apply_transformation(H, img_name):
-    source = Image.open(img_name)
+
+	# Setup source image
+    source = Image.open("images" + os.sep + img_name)
     source_mat = np.array(source)
 
-    print(source_mat.shape)
-
+    # Setup dest image
     dest = Image.new(source.mode, source.size)
     width, height = dest.size
     display = dest.load()
 
     for y in range(height):
         for x in range(width):
+
             # Homogenous image coordinate
             screen_coor = np.array([[x], [y], [1]])
-            mapped_coor = H @ screen_coor
+
+            # Please don't use @ yet, I'm not ready to commit to Python 3, thanks -AK
+            mapped_coor = np.matmul(H, screen_coor)
 
             #  print("Inhomogeneous mapping:\n{}".format(mapped_coor))
             w = mapped_coor[2, 0]
             mapped_coor = mapped_coor / w
             #  print("Homogeneous mapping:\n{}".format(mapped_coor))
 
-            xp = clamp(mapped_coor[0, 0], 0, width-1)
-            yp = clamp(mapped_coor[1, 0], 0, height-1)
-            zp = mapped_coor[2, 0] # Must be 1
+            xp = int(round(mapped_coor[0, 0]))
+            yp = int(round(mapped_coor[1, 0]))
+            zp = int(round(mapped_coor[2, 0])) # Must be 1
 
-            # Duplicate out of bounds pixels for now
-            display[y, x] = tuple(source_mat[yp, xp])
+            # The load() function creates a matrix indexed [x][y] instead of [y][x]
+            # Swap the locations of x and y when indexing to compensate. Yuck!
+            display[x, y] = tuple(source_mat[yp, xp]) if 0 <= yp < height and 0 <= xp < width else (0, 0, 0)
 
-    dest.save("trans_" + img_name, "PNG")
+    dest.save("images" + os.sep + "trans_" + img_name, "PNG")
 
 def main():
     depth = 1000 # Arbirtary projector depth in fictional units
@@ -226,8 +227,8 @@ def main():
     # For each coordinate in `proj_coors`, determine its mapping to the screen
     # using one of the appropriate functions
     for xp, yp in proj_coors:
-        xyz, (xk_prime, yk_prime, _) = vertical_tilt(xp, yp, depth, alpha_v)
-        #  xyz, (xk_prime, yk_prime, _) = both_tilt(xp, yp, depth, alpha_v, alpha_v)
+        #  xyz, (xk_prime, yk_prime, _) = vertical_tilt(xp, yp, depth, alpha_v)
+        xyz, (xk_prime, yk_prime, _) = both_tilt(xp, yp, depth, alpha_v, alpha_v)
         print("Calculated mapping ({}, {})->({}, {})".format(xp, yp, xk_prime,
                                                              yk_prime))
 
@@ -236,7 +237,8 @@ def main():
     H = get_homography(proj_coors, screen_coors)
     H_inv = np.linalg.inv(H) # Reverse the mapping for debugging purposes
 
-    apply_transformation(H_inv, "icon.png")
+    # apply_transformation(H_inv, "icon.png")
+    apply_transformation(H_inv, "grad.png")
 
 if __name__ == "__main__":
     # Make printing more reasonable
