@@ -1,21 +1,8 @@
-# Anthony Kuntz
-# 18-500 demo code
-#
-# Nothing tricky happening here, it's basically just PixelLab from 15122
-#
-# KEYSTONE CORRECTION DERIVED FROM THE PARAMETERS OF PROJECTORS
-# https://patentimages.storage.googleapis.com/9e/8d/78/5056def0bb7426/US6997563.pdf
-#
-# VLSI ARCHITECTURE FOR ELECTRONIC CORRECTION OF OPTICAL DISTORTIONS
-# http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.4.8788&rep=rep1&type=pdf
-#
-# FPGA ARCHITECTURE FOR REAL-TIME BARREL DISTORTION CORRECTION OF COLOUR IMAGES
-# https://web.stanford.edu/~hblasins/Publications/ICME2011.pdf
+from math import cos, pi, sin, tan
 
+import numpy as np
 import PIL as pil
 from PIL import Image
-import numpy as np
-from math import cos, pi, sin, tan
 
 """ Compute the Direct Linear Transform (DLT) and obtain the homography matrix
 from the following steps:
@@ -119,7 +106,6 @@ def proj_corners2(x, y, d, vert_tilt, horiz_tilt, offset, width=1920,
 
 """ Transform a pair (xp, yp) of undistorted coordinates into the corresponding
 pair (xk, yk) in the plane of the tilted screen. """
-
 def vertical_tilt(xp, yp, depth, alpha_v):
     # Calculate the distorted coordinates in 3d-space, not accounting for the
     # varying depth of the screen with respect to the lens
@@ -140,6 +126,8 @@ def vertical_tilt(xp, yp, depth, alpha_v):
 
     return (xk, yk, zk), (xk_prime, yk_prime, zk_prime)
 
+""" Transform a pair (xp, yp) of undistorted coordinates into the corresponding
+pair (xk, yk) in the plane of the tilted screen. """
 def both_tilt(xp, yp, depth, alpha_h, alpha_v):
     # Calculate the distorted coordinates in 3d-space, not accounting for the
     # varying depth of the screen with respect to the lens
@@ -193,10 +181,11 @@ def clamp(x, lo, hi):
     elif x > hi: return int(hi + 0.5)
     else: return int(x + 0.5);
 
-def apply_transformation(H, name):
-
-    source = Image.open(name)
+def apply_transformation(H, img_name):
+    source = Image.open(img_name)
     source_mat = np.array(source)
+
+    print(source_mat.shape)
 
     dest = Image.new(source.mode, source.size)
     width, height = dest.size
@@ -206,7 +195,6 @@ def apply_transformation(H, name):
         for x in range(width):
             # Homogenous image coordinate
             screen_coor = np.array([[x], [y], [1]])
-
             mapped_coor = H @ screen_coor
 
             #  print("Inhomogeneous mapping:\n{}".format(mapped_coor))
@@ -216,41 +204,42 @@ def apply_transformation(H, name):
 
             xp = clamp(mapped_coor[0, 0], 0, width-1)
             yp = clamp(mapped_coor[1, 0], 0, height-1)
-            zp = mapped_coor[2, 0]
+            zp = mapped_coor[2, 0] # Must be 1
 
+            # Duplicate out of bounds pixels for now
             display[y, x] = tuple(source_mat[yp, xp])
 
-    dest.save(name + "_H", "PNG")
+    dest.save("trans_" + img_name, "PNG")
 
 def main():
-    np.set_printoptions(precision=2, threshold=25, suppress=True)
+    depth = 1000 # Arbirtary projector depth in fictional units
+    alpha_v = pi / 6 # Vertical tilt
+    alpha_h = pi / 6 # Horizontal tilt
 
-    depth = 1000
-    alpha_v = pi / 6
+    # Corners of our imaginary image in pixel coordinates
     proj_coors = [
-            (0, 0), (0, 640),
-            (480, 0), (640, 480),
+            (0, 0), (0, 512),
+            (512, 0), (512, 512),
             ]
 
     screen_coors = []
+    # For each coordinate in `proj_coors`, determine its mapping to the screen
+    # using one of the appropriate functions
     for xp, yp in proj_coors:
-        #  xyz, (xk_prime, yk_prime, _) = vertical_tilt(xp, yp, depth, alpha_v)
-        xyz, (xk_prime, yk_prime, _) = both_tilt(xp, yp, depth, alpha_v, alpha_v)
+        xyz, (xk_prime, yk_prime, _) = vertical_tilt(xp, yp, depth, alpha_v)
+        #  xyz, (xk_prime, yk_prime, _) = both_tilt(xp, yp, depth, alpha_v, alpha_v)
         print("Calculated mapping ({}, {})->({}, {})".format(xp, yp, xk_prime,
                                                              yk_prime))
 
         screen_coors.append((xk_prime, yk_prime))
 
     H = get_homography(proj_coors, screen_coors)
-    H_inv = np.linalg.inv(H)
+    H_inv = np.linalg.inv(H) # Reverse the mapping for debugging purposes
+
     apply_transformation(H_inv, "icon.png")
 
 if __name__ == "__main__":
+    # Make printing more reasonable
+    np.set_printoptions(precision=2, threshold=25, suppress=True)
+
     main()
-
-# identity function:
-# apply_transformation(1,0,0,0,1,0,0,0,"icon.png")
-
-#  apply_transformation(1,.2,.1,.1,1,0,0,0,"icon.png")
-
-
