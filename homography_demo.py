@@ -140,7 +140,7 @@ def vertical_tilt(xp, yp, depth, alpha_v):
 
     return (xk, yk, zk), (xk_prime, yk_prime, zk_prime)
 
-def both_tilt(xp, yp, zp, depth, alpha_h, alpha_v):
+def both_tilt(xp, yp, depth, alpha_h, alpha_v):
     # Calculate the distorted coordinates in 3d-space, not accounting for the
     # varying depth of the screen with respect to the lens
     xk_numer = xp
@@ -188,40 +188,45 @@ def both_tilt(xp, yp, zp, depth, alpha_h, alpha_v):
 
     return (xk, yk, zk), (xk_prime, yk_prime, zk_prime)
 
-def apply_transformation(a,b,c,d,e,f,g,h,name):
+def clamp(x, lo, hi):
+    if x < lo: return int(lo + 0.5)
+    elif x > hi: return int(hi + 0.5)
+    else: return int(x + 0.5);
 
-    H = np.matrix([ [a, b, c],
-                    [d, e, f],
-                    [g, h, 1] ])
-
+def apply_transformation(H, name):
 
     source = Image.open(name)
     source_mat = np.array(source)
 
     dest = Image.new(source.mode, source.size)
+    width, height = dest.size
     display = dest.load()
 
-    width, height = dest.size
+    for y in range(height):
+        for x in range(width):
+            # Homogenous image coordinate
+            screen_coor = np.array([[x], [y], [1]])
 
-    for y in xrange(height):
-        for x in xrange(width):
+            mapped_coor = H @ screen_coor
 
-            dest_array = np.array([[x], [y], [1]])
+            #  print("Inhomogeneous mapping:\n{}".format(mapped_coor))
+            w = mapped_coor[2, 0]
+            mapped_coor = mapped_coor / w
+            #  print("Homogeneous mapping:\n{}".format(mapped_coor))
 
-            result = np.matmul(H,dest_array)
+            xp = clamp(mapped_coor[0, 0], 0, width-1)
+            yp = clamp(mapped_coor[1, 0], 0, height-1)
+            zp = mapped_coor[2, 0]
 
-            x_src = min( width-1, max(0, int(round(result[0]))))
-            y_src = min(height-1, max(0, int(round(result[1]))))
+            display[y, x] = tuple(source_mat[yp, xp])
 
-            display[y,x] = tuple(source_mat[y_src][x_src])
-
-    dest.show()
+    dest.save(name + "_H", "PNG")
 
 def main():
     np.set_printoptions(precision=2, threshold=25, suppress=True)
 
     depth = 1000
-    alpha_v = pi / 12
+    alpha_v = pi / 6
     proj_coors = [
             (0, 0), (0, 640),
             (480, 0), (640, 480),
@@ -229,13 +234,16 @@ def main():
 
     screen_coors = []
     for xp, yp in proj_coors:
-        xyz, (xk_prime, yk_prime, _)  = vertical_tilt(xp, yp, depth, alpha_v)
+        #  xyz, (xk_prime, yk_prime, _) = vertical_tilt(xp, yp, depth, alpha_v)
+        xyz, (xk_prime, yk_prime, _) = both_tilt(xp, yp, depth, alpha_v, alpha_v)
         print("Calculated mapping ({}, {})->({}, {})".format(xp, yp, xk_prime,
                                                              yk_prime))
 
         screen_coors.append((xk_prime, yk_prime))
 
-    get_homography(proj_coors, screen_coors)
+    H = get_homography(proj_coors, screen_coors)
+    H_inv = np.linalg.inv(H)
+    apply_transformation(H_inv, "icon.png")
 
 if __name__ == "__main__":
     main()
