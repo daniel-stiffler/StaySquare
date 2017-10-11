@@ -1,9 +1,10 @@
 from math import cos, pi, sin, tan
 
+from optparse import OptionParser
 import numpy as np
 import PIL as pil
 from PIL import Image
-import os # for separator
+import os.path
 
 """ Compute the Direct Linear Transform (DLT) and obtain the homography matrix
 from the following steps:
@@ -57,53 +58,6 @@ def get_homography(proj_coors, screen_coors):
     print("Homography matrix:\n{}".format(H))
 
     return H
-
-""" Some projectors achieve rotation by elevating the front end of the
-projector: either using extendible legs, or by propping the projector, perhaps
-using books.  This elevation accomplishes rotation through the vertical
-YZ-plane. To achieve rotation through the horizontal plane, the projector (along
-with any elevating materials) is swiveled on the table (or whatever surface the
-projector is resting on). In other words, the horizontal rotation is in the
-original XZ-plane, which was orthogonal to the projection surface. """
-def proj_corners1(x, y, d, vert_tilt, horiz_tilt, offset, width=1920,
-                  height=1080):
-
-    x_proj_numer = cos(horiz_tilt) * x
-    x_proj_denom = 1. + \
-                   (sin(vert_tilt) * y + cos(vert_tilt) * sin(horiz_tilt) * x) / d
-    x_proj = x_proj_numer / x_proj_denom
-
-    y_proj_numer = cos(vert_tilt) * y - \
-                   sin(horiz_tilt) * sin(vert_tilt) * x - \
-                   (offset - height/2)
-    y_proj_denom = 1 + \
-                   (sin(vert_tilt) * y + cos(vert_tilt) * sin(horiz_tilt) * x) / d ** 6
-    y_proj = y_proj_numer / y_proj_denom + (offset - width/2)
-
-    return x_proj, y_proj
-
-""" Some projectors using a platform that can both rotate left and right and
-swivel up and down. Such a projector is not performing rotation in the original
-XZ-plane: instead, it is rotating horizontally in a tilted plane. Thus, to
-determine the true horizontal rotation (relative to the original XZ plane)
-requires compensating for the fact that the projector has also been tilted
-vertically. """
-def proj_corners2(x, y, d, vert_tilt, horiz_tilt, offset, width=1920,
-                  height=1080):
-
-    x_proj_numer = cos(horiz_tilt) * x - \
-                   sin(horiz_tilt) * cos(vert_tilt) * y
-    x_proj_denom = 1 + \
-                   (sin(horiz_tilt) * x - cos(horiz_tilt) * sin(vert_tilt) * y) / d
-    x_proj = x_proj_numer / x_proj_denom
-
-    y_proj_numer = cos(vert_tilt) * y - \
-                   (offset - width/2)
-    y_proj_denom = 1 + \
-                   (sin(horiz_tilt) * x + cos(horiz_tilt) * sin(vert_tilt) * y) / d
-    y_proj = y_proj_numer / y_proj_denom + (offset - height/2)
-
-    return x_proj, y_proj
 
 """ Transform a pair (xp, yp) of undistorted coordinates into the corresponding
 pair (xk, yk) in the plane of the tilted screen. """
@@ -177,58 +131,87 @@ def both_tilt(xp, yp, depth, alpha_h, alpha_v):
 
     return (xk, yk, zk), (xk_prime, yk_prime, zk_prime)
 
-def apply_transformation(H, img_name):
+def apply_transformation(H, fname, width, height):
+    fin_path = os.path.join("images", fname)
+    fout_path = os.path.join("images",
+                             "trans_{}.png".format(os.path.splitext(fname)[0]))
 
-	# Setup source image
-    source = Image.open("images" + os.sep + img_name)
-    source_mat = np.array(source)
+    # Setup source image
+    src_img = Image.open(fin_path).convert("RGB").resize((width, height))
+    if src_img.size != (width, height):
+        print("Input image {} had unexpected dimensions " \
+              "{}".format(fname, src_img.size))
+
+    src_pixels = src_img.load() # Fast pixel access object [x, y]
 
     # Setup dest image
-    dest = Image.new(source.mode, source.size)
-    width, height = dest.size
-    display = dest.load()
+    dest_img = Image.new("RGB", (2*width, 2*height))
+    dest_pixels = dest_img.load() # Fast pixel access object [x, y]
 
-    for y in range(height):
-        for x in range(width):
+    # Extend the dimension *2 in each dimension
+    for y in range(-height, height):
+        for x in range(-width, width):
+            # Homogeneous screen coordinate
+            screen_coord = np.array([[x], [y], [1.]])
 
-            # Homogenous image coordinate
-            screen_coor = np.array([[x], [y], [1]])
+            # Map the homogeneous coordinate to the corresponding
+            # non-homogeneous coordinate in the input plane
+            mapped_coord = H @ screen_coord
 
-            # Please don't use @ yet, I'm not ready to commit to Python 3, thanks -AK
-            mapped_coor = np.matmul(H, screen_coor)
+            w = mapped_coord[2, 0] # Inhomogeneity
+            mapped_coord = mapped_coord / w # Convert to homogeneous
 
-            #  print("Inhomogeneous mapping:\n{}".format(mapped_coor))
-            w = mapped_coor[2, 0]
-            mapped_coor = mapped_coor / w
-            #  print("Homogeneous mapping:\n{}".format(mapped_coor))
+            xp = int(round(mapped_coord[0, 0]))
+            yp = int(round(mapped_coord[1, 0]))
 
-            xp = int(round(mapped_coor[0, 0]))
-            yp = int(round(mapped_coor[1, 0]))
-            zp = int(round(mapped_coor[2, 0])) # Must be 1
+            xp += width/2.
+            yp += width/2.
 
-            # The load() function creates a matrix indexed [x][y] instead of [y][x]
-            # Swap the locations of x and y when indexing to compensate. Yuck!
-            display[x, y] = tuple(source_mat[yp, xp]) if 0 <= yp < height and 0 <= xp < width else (0, 0, 0)
+            if 0 <= xp < width and 0 <= yp < height:
+                dest_pixels[x+width, y+height] = src_pixels[xp, yp]
+            elif -width/2. < x < width/2. and -height/2. < y < height/2.:
+                dest_pixels[x+width, y+height] = (255, 255, 255) # White
+            else:
+                dest_pixels[x+width, y+height] = (0, 0, 0) # Black
 
-    dest.save("images" + os.sep + "trans_" + img_name, "PNG")
+    dest_img.save(fout_path)
+    print("Saved transformed image to {}".format(fout_path))
 
 def main():
-    depth = 1000 # Arbirtary projector depth in fictional units
-    alpha_v = pi / 6 # Vertical tilt
-    alpha_h = pi / 6 # Horizontal tilt
+    parser = OptionParser()
+    parser.add_option("-f", "--file", dest="fname", help="Input image name",
+                      default="grad.png")
+    parser.add_option("--width", dest="width", help="Input image width",
+                      default=256)
+    parser.add_option("--height", dest="height", help="Input image height",
+                      default=256)
+    parser.add_option("-d", "--depth", dest="depth",
+                      help="Project depth (imaginary units)", default=1000)
+    parser.add_option("--vtilt", dest="alpha_v", help="Vertical tilt",
+                      type=float, default=pi/6.)
+    parser.add_option("--htilt", dest="alpha_h", help="Horizontal tilt",
+                      type=float, default=pi/6.)
 
-    # Corners of our imaginary image in pixel coordinates
+    options, args = parser.parse_args()
+
+    width = options.width
+    height = options.height
+    depth = options.depth
+    alpha_v = options.alpha_v
+    alpha_h = options.alpha_h
+
+    # Corners of our imaginary image in pixel coordinates relative to the center
     proj_coors = [
-            (0, 0), (0, 512),
-            (512, 0), (512, 512),
+            (-width/2. - 1., -width/2. - 1.), (width/2., -width/2. - 1.),
+            (-width/2. - 1, width/2.), (width/2., width/2.),
             ]
 
     screen_coors = []
     # For each coordinate in `proj_coors`, determine its mapping to the screen
     # using one of the appropriate functions
     for xp, yp in proj_coors:
-        #  xyz, (xk_prime, yk_prime, _) = vertical_tilt(xp, yp, depth, alpha_v)
-        xyz, (xk_prime, yk_prime, _) = both_tilt(xp, yp, depth, alpha_v, alpha_v)
+        xyz, (xk_prime, yk_prime, _) = both_tilt(xp, yp, depth,
+                                                 alpha_h, alpha_v)
         print("Calculated mapping ({}, {})->({}, {})".format(xp, yp, xk_prime,
                                                              yk_prime))
 
@@ -237,8 +220,7 @@ def main():
     H = get_homography(proj_coors, screen_coors)
     H_inv = np.linalg.inv(H) # Reverse the mapping for debugging purposes
 
-    # apply_transformation(H_inv, "icon.png")
-    apply_transformation(H_inv, "grad.png")
+    apply_transformation(H_inv, "grad.png", width, height)
 
 if __name__ == "__main__":
     # Make printing more reasonable
