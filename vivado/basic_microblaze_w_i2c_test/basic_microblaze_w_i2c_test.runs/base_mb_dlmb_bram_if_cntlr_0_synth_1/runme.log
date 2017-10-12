@@ -1,0 +1,49 @@
+
+*** Running vivado
+    with args -log base_mb_dlmb_bram_if_cntlr_0.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source base_mb_dlmb_bram_if_cntlr_0.tcl
+
+
+****** Vivado v2017.2 (64-bit)
+  **** SW Build 1909853 on Thu Jun 15 18:39:10 MDT 2017
+  **** IP Build 1909766 on Thu Jun 15 19:58:00 MDT 2017
+    ** Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+
+source base_mb_dlmb_bram_if_cntlr_0.tcl -notrace
+Starting RTL Elaboration : Time (s): cpu = 00:00:04 ; elapsed = 00:00:04 . Memory (MB): peak = 1343.484 ; gain = 70.996 ; free physical = 8775 ; free virtual = 20306
+INFO: [Synth 8-638] synthesizing module 'base_mb_dlmb_bram_if_cntlr_0' [/afs/ece.cmu.edu/usr/apinson/Documents/500/vivado/microblaze_test/microblaze_test.srcs/sources_1/bd/base_mb/ip/base_mb_dlmb_bram_if_cntlr_0/synth/base_mb_dlmb_bram_if_cntlr_0.vhd:84]
+INFO: [Synth 8-638] synthesizing module 'lmb_bram_if_cntlr' [/afs/ece.cmu.edu/usr/apinson/Documents/500/vivado/microblaze_test/microblaze_test.srcs/sources_1/bd/base_mb/ipshared/51e1/hdl/lmb_bram_if_cntlr_v4_0_vh_rfs.vhd:3106]
+INFO: [Synth 8-638] synthesizing module 'lmb_mux' [/afs/ece.cmu.edu/usr/apinson/Documents/500/vivado/microblaze_test/microblaze_test.srcs/sources_1/bd/base_mb/ipshared/51e1/hdl/lmb_bram_if_cntlr_v4_0_vh_rfs.vhd:2601]
+INFO: [Synth 8-638] synthesizing module 'pselect_mask' [/afs/ece.cmu.edu/usr/apinson/Documents/500/vivado/microblaze_test/microblaze_test.srcs/sources_1/bd/base_mb/ipshared/51e1/hdl/lmb_bram_if_cntlr_v4_0_vh_rfs.vhd:2121]
+INFO: [Synth 8-256] done synthesizing module 'pselect_mask' (1#1) [/afs/ece.cmu.edu/usr/apinson/Documents/500/vivado/microblaze_test/microblaze_test.srcs/sources_1/bd/base_mb/ipshared/51e1/hdl/lmb_bram_if_cntlr_v4_0_vh_rfs.vhd:2121]
+INFO: [Synth 8-256] done synthesizing module 'lmb_mux' (2#1) [/afs/ece.cmu.edu/usr/apinson/Documents/500/vivado/microblaze_test/microblaze_test.srcs/sources_1/bd/base_mb/ipshared/51e1/hdl/lmb_bram_if_cntlr_v4_0_vh_rfs.vhd:2601]
+INFO: [Synth 8-256] done synthesizing module 'lmb_bram_if_cntlr' (3#1) [/afs/ece.cmu.edu/usr/apinson/Documents/500/vivado/microblaze_test/microblaze_test.srcs/sources_1/bd/base_mb/ipshared/51e1/hdl/lmb_bram_if_cntlr_v4_0_vh_rfs.vhd:3106]
+INFO: [Synth 8-256] done synthesizing module 'base_mb_dlmb_bram_if_cntlr_0' (4#1) [/afs/ece.cmu.edu/usr/apinson/Documents/500/vivado/microblaze_test/microblaze_test.srcs/sources_1/bd/base_mb/ip/base_mb_dlmb_bram_if_cntlr_0/synth/base_mb_dlmb_bram_if_cntlr_0.vhd:84]
+Finished RTL Elaboration : Time (s): cpu = 00:00:04 ; elapsed = 00:00:05 . Memory (MB): peak = 1385.992 ; gain = 113.504 ; free physical = 8683 ; free virtual = 20215
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:05 ; elapsed = 00:00:05 . Memory (MB): peak = 1385.992 ; gain = 113.504 ; free physical = 8673 ; free virtual = 20205
+INFO: [Device 21-403] Loading part xc7vx485tffg1761-2
+Constraint Validation Runtime : Time (s): cpu = 00:00:00.02 ; elapsed = 00:00:00.02 . Memory (MB): peak = 1826.316 ; gain = 0.004 ; free physical = 7492 ; free virtual = 19025
+Finished Constraint Validation : Time (s): cpu = 00:00:22 ; elapsed = 00:00:25 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7704 ; free virtual = 19252
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:22 ; elapsed = 00:00:25 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7704 ; free virtual = 19251
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:22 ; elapsed = 00:00:25 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7706 ; free virtual = 19253
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7693 ; free virtual = 19240
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7676 ; free virtual = 19225
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:31 ; elapsed = 00:00:33 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7277 ; free virtual = 18827
+Finished Timing Optimization : Time (s): cpu = 00:00:31 ; elapsed = 00:00:33 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7282 ; free virtual = 18832
+Finished Technology Mapping : Time (s): cpu = 00:00:31 ; elapsed = 00:00:33 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7273 ; free virtual = 18823
+Finished IO Insertion : Time (s): cpu = 00:00:31 ; elapsed = 00:00:34 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7303 ; free virtual = 18853
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:31 ; elapsed = 00:00:34 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7303 ; free virtual = 18853
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:31 ; elapsed = 00:00:34 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7303 ; free virtual = 18853
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:31 ; elapsed = 00:00:34 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7305 ; free virtual = 18854
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:31 ; elapsed = 00:00:34 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7305 ; free virtual = 18854
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:31 ; elapsed = 00:00:34 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7305 ; free virtual = 18854
+
+Report Cell Usage: 
++------+-----+------+
+|      |Cell |Count |
++------+-----+------+
+|1     |LUT2 |     3|
+|2     |LUT3 |     4|
+|3     |FDRE |     2|
++------+-----+------+
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:31 ; elapsed = 00:00:34 . Memory (MB): peak = 1826.316 ; gain = 553.828 ; free physical = 7305 ; free virtual = 18854
+synth_design: Time (s): cpu = 00:00:33 ; elapsed = 00:00:35 . Memory (MB): peak = 1859.344 ; gain = 642.156 ; free physical = 7268 ; free virtual = 18820

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document>
+<!--The data in this file is primarily intended for consumption by Xilinx tools.
+The structure and the elements are likely to change over the next few releases.
+This means code written to parse this file will need to be revisited each subsequent release.-->
+<application name="pa" timeStamp="Thu Oct 12 16:17:39 2017">
+<section name="Project Information" visible="false">
+<property name="ProjectID" value="254cfcc83a2d46849aeaf27a01b29476" type="ProjectID"/>
+<property name="ProjectIteration" value="3" type="ProjectIteration"/>
+</section>
+<section name="PlanAhead Usage" visible="true">
+<item name="Project Data">
+<property name="SrcSetCount" value="1" type="SrcSetCount"/>
+<property name="ConstraintSetCount" value="1" type="ConstraintSetCount"/>
+<property name="DesignMode" value="RTL" type="DesignMode"/>
+<property name="SynthesisStrategy" value="Vivado Synthesis Defaults" type="SynthesisStrategy"/>
+<property name="ImplStrategy" value="Vivado Implementation Defaults" type="ImplStrategy"/>
+</item>
+<item name="Java Command Handlers">
+<property name="CloseProject" value="5" type="JavaHandler"/>
+<property name="CustomizeRSBBlock" value="9" type="JavaHandler"/>
+<property name="EditDelete" value="4" type="JavaHandler"/>
+<property name="NewLaunchHardware" value="1" type="JavaHandler"/>
+<property name="OpenBlockDesign" value="2" type="JavaHandler"/>
+<property name="RunBitgen" value="2" type="JavaHandler"/>
+<property name="RunImplementation" value="1" type="JavaHandler"/>
+<property name="RunSynthesis" value="3" type="JavaHandler"/>
+<property name="SaveProjectAs" value="3" type="JavaHandler"/>
+<property name="SaveRSBDesign" value="7" type="JavaHandler"/>
+<property name="ValidateRSBDesign" value="2" type="JavaHandler"/>
+</item>
+<item name="Gui Resources Info">
+<property name="AddressTreeTablePanel_ADDRESS_TREE_TABLE" value="11" type="GuiResourceData"/>
+<property name="ApplyRSBMultiAutomationDialog_CHECKBOX_TREE" value="14" type="GuiResourceData"/>
+<property name="BaseDialog_CANCEL" value="3" type="GuiResourceData"/>
+<property name="BaseDialog_NO" value="1" type="GuiResourceData"/>
+<property name="BaseDialog_OK" value="20" type="GuiResourceData"/>
+<property name="CmdMsgDialog_OK" value="4" type="GuiResourceData"/>
+<property name="CoreTreeTablePanel_CORE_TREE_TABLE" value="19" type="GuiResourceData"/>
+<property name="CustomizeCoreDialog_DOCUMENTATION" value="1" type="GuiResourceData"/>
+<property name="CustomizeCoreDialog_SWITCH_TO_ADVANCED_VIEW" value="2" type="GuiResourceData"/>
+<property name="CustomizeCoreDialog_SWITCH_TO_BASIC_VIEW" value="1" type="GuiResourceData"/>
+<property name="ExpRunTreePanel_EXP_RUN_TREE_TABLE" value="6" type="GuiResourceData"/>
+<property name="ExploreAheadView_SHOW_PERCENTAGE" value="4" type="GuiResourceData"/>
+<property name="FileSetPanel_FILE_SET_PANEL_TREE" value="11" type="GuiResourceData"/>
+<property name="FlowNavigatorTreePanel_FLOW_NAVIGATOR_TREE" value="7" type="GuiResourceData"/>
+<property name="HACGCComboBox_VALUE_OF_SPECIFIED_PARAMETER" value="1" type="GuiResourceData"/>
+<property name="HACGCComboBox_VALUE_OF_SPECIFIED_PARAMETER_MANUAL" value="1" type="GuiResourceData"/>
+<property name="HACGCTabbedPane_TABBED_PANE" value="1" type="GuiResourceData"/>
+<property name="MainMenuMgr_EXPORT" value="2" type="GuiResourceData"/>
+<property name="MainMenuMgr_FILE" value="30" type="GuiResourceData"/>
+<property name="MainMenuMgr_HIGHLIGHT" value="4" type="GuiResourceData"/>
+<property name="MainMenuMgr_OPEN_RECENT_FILE" value="3" type="GuiResourceData"/>
+<property name="MainMenuMgr_OPEN_RECENT_PROJECT" value="10" type="GuiResourceData"/>
+<property name="MainMenuMgr_UNSELECT_TYPE" value="2" type="GuiResourceData"/>
+<property name="MainMenuMgr_VIEW" value="4" type="GuiResourceData"/>
+<property name="MainWinMenuMgr_LAYOUT" value="4" type="GuiResourceData"/>
+<property name="Microblaze_Wizard_General_Settings_SELECT_IMPLEMENTATION_TO_OPTIMIZE_AREA" value="3" type="GuiResourceData"/>
+<property name="PACommandNames_CLOSE_PROJECT" value="5" type="GuiResourceData"/>
+<property name="PACommandNames_CUSTOMIZE_RSB_BLOC" value="9" type="GuiResourceData"/>
+<property name="PACommandNames_LAUNCH_HARDWARE" value="1" type="GuiResourceData"/>
+<property name="PACommandNames_RUN_BITGEN" value="1" type="GuiResourceData"/>
+<property name="PACommandNames_SAVE_PROJECT_AS" value="3" type="GuiResourceData"/>
+<property name="PACommandNames_SAVE_RSB_DESIGN" value="7" type="GuiResourceData"/>
+<property name="PACommandNames_VALIDATE_RSB_DESIGN" value="2" type="GuiResourceData"/>
+<property name="PAViews_ADDRESS_EDITOR" value="1" type="GuiResourceData"/>
+<property name="PAViews_SYSTEM" value="1" type="GuiResourceData"/>
+<property name="ProjectNameChooser_CHOOSE_PROJECT_LOCATION" value="5" type="GuiResourceData"/>
+<property name="ProjectNameChooser_PROJECT_NAME" value="2" type="GuiResourceData"/>
+<property name="RDICommands_DELETE" value="4" type="GuiResourceData"/>
+<property name="RSBApplyAutomationBar_RUN_BLOCK_AUTOMATION" value="1" type="GuiResourceData"/>
+<property name="RSBApplyAutomationBar_RUN_CONNECTION_AUTOMATION" value="3" type="GuiResourceData"/>
+<property name="SaveProjectUtils_CANCEL" value="1" type="GuiResourceData"/>
+<property name="SaveProjectUtils_DONT_SAVE" value="1" type="GuiResourceData"/>
+<property name="SaveProjectUtils_SAVE" value="7" type="GuiResourceData"/>
+<property name="SelectMenu_HIGHLIGHT" value="6" type="GuiResourceData"/>
+<property name="SyntheticaGettingStartedView_RECENT_PROJECTS" value="2" type="GuiResourceData"/>
+<property name="SystemBuilderMenu_ASSIGN_ADDRESS" value="2" type="GuiResourceData"/>
+<property name="SystemBuilderMenu_IP_DOCUMENTATION" value="16" type="GuiResourceData"/>
+<property name="SystemBuilderView_ADD_IP" value="6" type="GuiResourceData"/>
+<property name="SystemBuilderView_EXPAND_COLLAPSE" value="2" type="GuiResourceData"/>
+<property name="SystemBuilderView_ORIENTATION" value="10" type="GuiResourceData"/>
+<property name="TclConsoleView_CLEAR_ALL_OUTPUT_IN_TCL_CONSOLE" value="1" type="GuiResourceData"/>
+</item>
+</section>
+</application>
+</document>

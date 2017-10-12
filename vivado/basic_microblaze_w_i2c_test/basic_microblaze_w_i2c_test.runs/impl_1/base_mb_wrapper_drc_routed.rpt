@@ -1,0 +1,410 @@
+Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2017.2 (lin64) Build 1909853 Thu Jun 15 18:39:10 MDT 2017
+| Date         : Thu Oct 12 16:17:19 2017
+| Host         : hallertau.andrew.cmu.edu running 64-bit Red Hat Enterprise Linux Server release 7.4 (Maipo)
+| Command      : report_drc -file base_mb_wrapper_drc_routed.rpt -pb base_mb_wrapper_drc_routed.pb -rpx base_mb_wrapper_drc_routed.rpx
+| Design       : base_mb_wrapper
+| Device       : xc7vx485tffg1761-2
+| Speed File   : -2
+| Design State : Routed
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Report DRC
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+           Ruledeck: default
+             Max violations: <unlimited>
+             Violations found: 73
++-----------+----------+-----------------------------------------------------+------------+
+| Rule      | Severity | Description                                         | Violations |
++-----------+----------+-----------------------------------------------------+------------+
+| CFGBVS-1  | Warning  | Missing CFGBVS and CONFIG_VOLTAGE Design Properties | 1          |
+| PDCN-1569 | Warning  | LUT equation term check                             | 72         |
++-----------+----------+-----------------------------------------------------+------------+
+
+2. REPORT DETAILS
+-----------------
+CFGBVS-1#1 Warning
+Missing CFGBVS and CONFIG_VOLTAGE Design Properties  
+Neither the CFGBVS nor CONFIG_VOLTAGE voltage property is set in the current_design.  Configuration bank voltage select (CFGBVS) must be set to VCCO or GND, and CONFIG_VOLTAGE must be set to the correct configuration voltage, in order to determine the I/O voltage support for the pins in bank 0.  It is suggested to specify these either using the 'Edit Device Properties' function in the GUI or directly in the XDC file using the following syntax:
+
+ set_property CFGBVS value1 [current_design]
+ #where value1 is either VCCO or GND
+
+ set_property CONFIG_VOLTAGE value2 [current_design]
+ #where value2 is the voltage provided to configuration bank 0
+
+Refer to the device configuration user guide for more information.
+Related violations: <none>
+
+PDCN-1569#1 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/BYTE_0_1_I/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/BYTE_0_1_I/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*(~A3)*(~A4))'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#2 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/BYTE_0_1_I/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/BYTE_0_1_I/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A3*(~A6))+(A1*A2*(~A3))+(A1*(~A2)*A3*A6)+(A1*(~A2)*(~A3))+((~A1)*(~A3)*(~A4))'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#3 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/BYTE_2_3_I/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/BYTE_2_3_I/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*(~A3)*(~A4))+((~A1)*A2)+((~A1)*(~A2)*(~A3))'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#4 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/BYTE_2_3_I/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/BYTE_2_3_I/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*(~A3)*(~A4))+((~A1)*A2*A3*(~A6))+((~A1)*A2*(~A3))+((~A1)*(~A2)*A3*A6)+((~A1)*(~A2)*(~A3))'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#5 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/LOW_ADDR_OUT_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/LOW_ADDR_OUT_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A3*(~A4))'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#6 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/LOW_ADDR_OUT_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/LOW_ADDR_OUT_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A3*(~A4))+(A1*A2*(~A3)*A4*A6)+(A1*(~A2)*A3*(~A4)*(~A6))+((~A1)*A2*A3*(~A4)*A6)+((~A1)*A2*(~A3)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#7 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/low_addr_i_INST/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/low_addr_i_INST/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*(~A2))+((~A1)*A2)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#8 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/low_addr_i_INST/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Byte_Doublet_Handle_I/low_addr_i_INST/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A3*A4*A6)+(A1*A2*(~A3)*(~A4)*A6)+(A1*(~A2)*A3*A4*(~A6))+(A1*(~A2)*A3*(~A4))+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4*(~A6))+((~A1)*A2*A3*(~A4))+((~A1)*A2*(~A3)*A4)+((~A1)*A2*(~A3)*(~A4)*(~A6))+((~A1)*(~A2)*A3*(~A4)*A6)+((~A1)*(~A2)*(~A3)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#9 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[0].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[0].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#10 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[0].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[0].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#11 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[10].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[10].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#12 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[10].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[10].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#13 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[11].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[11].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#14 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[11].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[11].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#15 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[12].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[12].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#16 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[12].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[12].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#17 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[13].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[13].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#18 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[13].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[13].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#19 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[14].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[14].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#20 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[14].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[14].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#21 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[15].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[15].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#22 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[15].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[15].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#23 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[16].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[16].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#24 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[16].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[16].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#25 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[17].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[17].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#26 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[17].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[17].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#27 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[18].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[18].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#28 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[18].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[18].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#29 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[19].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[19].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#30 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[19].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[19].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#31 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[1].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[1].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#32 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[1].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[1].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#33 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[20].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[20].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#34 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[20].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[20].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#35 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[21].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[21].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#36 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[21].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[21].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#37 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[22].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[22].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#38 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[22].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[22].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#39 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[23].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[23].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#40 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[23].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[23].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#41 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[24].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[24].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#42 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[24].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[24].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#43 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[25].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[25].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#44 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[25].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[25].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#45 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[26].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[26].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#46 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[26].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[26].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#47 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[27].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[27].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#48 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[27].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[27].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#49 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[28].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[28].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#50 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[28].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[28].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#51 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[29].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[29].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#52 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[29].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[29].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#53 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[2].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[2].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#54 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[2].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[2].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#55 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[30].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[30].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#56 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[30].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[30].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#57 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[31].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[31].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#58 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[31].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[31].Operand_Select_Bit_I/Both_PC_and_MSR.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#59 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[3].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[3].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#60 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[3].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[3].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#61 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[4].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[4].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#62 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[4].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[4].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#63 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[5].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[5].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#64 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[5].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[5].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#65 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[6].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[6].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#66 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[6].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[6].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#67 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[7].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[7].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#68 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[7].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[7].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#69 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[8].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[8].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#70 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[8].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[8].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#71 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[9].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT5 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[9].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O5=(A1*A2)+(A1*(~A2)*(~A3))+((~A1)*A2*A3)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+PDCN-1569#72 Warning
+LUT equation term check  
+Used physical LUT pin 'A5' of cell base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[9].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native/LUT6 (in base_mb_i/microblaze_0/U0/MicroBlaze_Core_I/Area.Core/Data_Flow_I/Operand_Select_I/OpSelect_Bits[9].Operand_Select_Bit_I/Only_PC.Op1_LUT6/Using_FPGA.Native macro) is not included in the LUT equation: 'O6=(A1*A2*A4)+(A1*A2*(~A4)*(~A6))+(A1*(~A2)*A3*A4*A6)+(A1*(~A2)*(~A3)*A4)+(A1*(~A2)*(~A3)*(~A4)*(~A6))+((~A1)*A2*A3*A4)+((~A1)*A2*A3*(~A4)*(~A6))+((~A1)*A2*(~A3)*A4*A6)+((~A1)*(~A2)*A4*A6)'. If this cell is a user instantiated LUT in the design, please remove connectivity to the pin or change the equation and/or INIT string of the LUT to prevent this issue. If the cell is inferred or IP created LUT, please regenerate the IP and/or resynthesize the design to attempt to correct the issue.
+Related violations: <none>
+
+
