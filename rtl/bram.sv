@@ -28,8 +28,14 @@
 module BRAM_1024x32_Header(
     DO, DI,
     RDADDR, RDCLK, RDEN, 
-    REGCE, RST, WE, 
+    RST,
     WRADDR, WRCLK, WREN);
+
+    input  logic [31:0] DI;
+    output logic [31:0] DO;
+    input  logic  [9:0] RDADDR, WRADDR;
+    input  logic RDCLK, WRCLK, RST;
+
 
     ////////////////
     // BRAM SPECS //
@@ -230,9 +236,9 @@ module BRAM_1024x32_Header(
     .RDADDR(RDADDR), // Input read address, width defined by read port depth
     .RDCLK(RDCLK),   // 1-bit input read clock
     .RDEN(RDEN),     // 1-bit input read port enable
-    .REGCE(REGCE),   // 1-bit input read output register enable
+    .REGCE(1'b1),    // 1-bit input read output register enable
     .RST(RST),       // 1-bit input reset
-    .WE(WE),         // Input write enable, width defined by write port depth
+    .WE(4'b0111),    // Input write enable, width defined by write port depth
     .WRADDR(WRADDR), // Input write address, width defined by write port depth
     .WRCLK(WRCLK),   // 1-bit input write clock
     .WREN(WREN)      // 1-bit input write port enable

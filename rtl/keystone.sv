@@ -3,6 +3,8 @@
    SystemVerilog implementation of Keystone Correction IP block. 
 */
 
+`define NUM_BRAMS 8
+
 //////////////////////////////////////////////////////
 //                                                  //
 // Rounder module converts fixed-point to integer.  //
@@ -13,21 +15,45 @@
 //////////////////////////////////////////////////////
 module Round_to_Coords 
   (output int          result,
-    input logic [42:0] value);
+    input logic [63:0] value);
 
-    logic [19:0] truncated; // 43 bits - 23 bits
+    // logic [19:0] truncated; // 43 bits - 23 bits
     
-    int truncated_int;
-    int round_up_int;
+    // int truncated_int;
+    // int round_up_int;
 
-    assign truncated     = value[42:23];
-    assign truncated_int = {{12{truncated[19] ,truncated}}};
-    assign round_up_int  = value[FXD_PNT-1];
+    // assign truncated     = value[42:23];
+    // assign truncated_int = {{12{truncated[19] ,truncated}}};
+    // assign round_up_int  = value[FXD_PNT-1];
 
-    assign result = truncated_int + round_up_int;
+    // assign result = truncated_int + round_up_int;
+
+    // TODO: Rewrite this based on FIXED POINT LOCATION
 
 endmodule: Round_to_Coords
 
+module Divider_Handler
+    ();
+
+endmodule: Divider_Handler
+
+module Multiplier_Handler
+    (input logic clock, reset, 
+    output logic [63:0] P, 
+     input logic [31:0] A, B, 
+     input logic request, 
+    output logic done);
+
+    // generate
+    //     for (int j = 0; j < MULT_LATENCY; j = j + 1) begin : mults
+            
+    //         base_mb_mult_gen_0_0 m(.CLK(clock),
+    //                                .A);
+
+    //     end // mults
+    // endgenerate
+
+endmodule: Multiplier_Handler
 
 ///////////////////////////////////////////////////////////////
 //                                                           //
@@ -38,67 +64,100 @@ endmodule: Round_to_Coords
 //  - Rounds and formats results for easy integer lookup.    //
 //                                                           //
 ///////////////////////////////////////////////////////////////
-module Coordinate_calculator // TODO NOTE: This might need further pipelining
+module Coordinate_Calculator // TODO NOTE: This might need further pipelining
  #(parameter WIDTH=1920, HEIGHT=1080)
   (output int x_result, y_result,
-    input logic clock,
+    input logic clock, reset
     input int x, y,
     input int a, b, c, d, e, f, g, h);
 
-    logic [42:0] ax, by, dx, ey, gx, hy;
-    logic [42:0] xw, yw, w;
-    logic [42:0] x_norm, y_norm;
-    logic [42:0] x_adjust, y_adjust;
+    logic [63:0] ax, by, dx, ey, gx, hy;
+    logic [63:0] xw, yw, w;
+    logic [63:0] x_norm, y_norm;
+    logic [63:0] x_adjust, y_adjust;
+    logic        x_div_done, y_div_done;
+    logic        done_ax, done_by, done_dx;
+    logic        done_ey, done_gx, done_hy;
 
     ////////////////////////////////////////////
     // MULTIPLIERS FOR VECTOR MATRIX MULTIPLY //
     ////////////////////////////////////////////
 
-    base_mb_xbip_dsp48_macro_0_0 m0(.CLK(clock),
-                                    .P(ax),
-                                    .A(a[24:0]),  // GET INDEXING RIGHT!!
-                                    .B(x[17:0])); // GET INDEXING RIGHT!!
+    Multiplier_Handler m0(.clock(clock),
+                          .reset(reset),
+                          .P(ax),
+                          .A(a),  // GET INDEXING RIGHT!!
+                          .B(x),
+                          .request(1'b1),
+                          .done(done_ax)); // GET INDEXING RIGHT!!
 
-    base_mb_xbip_dsp48_macro_0_0 m1(.CLK(clock),
-                                    .P(by),
-                                    .A(b[24:0]),
-                                    .B(y[17:0]));
+    Multiplier_Handler m1(.clock(clock),
+                          .reset(reset),
+                          .P(by),
+                          .A(b),
+                          .B(y),
+                          .request(1'b1),
+                          .done(done_by));
 
-    base_mb_xbip_dsp48_macro_0_0 m2(.CLK(clock),
-                                    .P(dx),
-                                    .A(d[24:0]),
-                                    .B(x[17:0]));
+    Multiplier_Handler m2(.clock(clock),
+                          .reset(reset),
+                          .P(dx),
+                          .A(d),
+                          .B(x),
+                          .request(1'b1),
+                          .done(done_dx));
 
-    base_mb_xbip_dsp48_macro_0_0 m3(.CLK(clock),
-                                    .P(ey),
-                                    .A(e[24:0]),
-                                    .B(y[17:0]));
+    Multiplier_Handler m3(.clock(clock),
+                          .reset(reset),
+                          .P(ey),
+                          .A(e),
+                          .B(y),
+                          .request(1'b1),
+                          .done(done_ey));
 
-    base_mb_xbip_dsp48_macro_0_0 m4(.CLK(clock),
-                                    .P(gx),
-                                    .A(g[24:0]),
-                                    .B(x[17:0]));
+    Multiplier_Handler m4(.clock(clock),
+                          .reset(reset),
+                          .P(gx),
+                          .A(g),
+                          .B(x),
+                          .request(1'b1),
+                          .done(done_gx));
 
-    base_mb_xbip_dsp48_macro_0_0 m5(.CLK(clock),
-                                    .P(hy),
-                                    .A(h[24:0]),
-                                    .B(y[17:0]));
+    Multiplier_Handler m5(.clock(clock),
+                          .reset(reset),
+                          .P(hy),
+                          .A(h),
+                          .B(y),
+                          .request(1'b1),
+                          .done(done_hy));
 
     ///////////////////////////////////////
     // ADDERS FOR VECTOR MATRIX MULTIPLY //
     ///////////////////////////////////////
 
-    assign xw = ax + by + {{11{c[31]}},c};
-    assign yw = dx + ey + {{11{f[31]}},f};
-    assign  w = gx + hy + 43'b1;
+    assign xw = ax + by + {{32{c[31]}},c};
+    assign yw = dx + ey + {{32{f[31]}},f};
+    assign  w = gx + hy + 64'd1;
 
     ///////////////////////////////////////////
     // DIVIDERS FOR HOMOGENOUS NORMALIZATION //
     ///////////////////////////////////////////
 
-    // TODO NOTE: Wow, how are we going to implement this???
-    assign x_norm = xw / w;
-    assign y_norm = yw / w;
+    Divider_Handler dh0(.input_A(xw),
+                        .input_B(w),
+                        .output(x_norm),
+                        .request(1'b1), // TODO: fix this
+                        .done(x_div_done),
+                        .clock(clock),
+                        .reset(reset));
+
+    Divider_Handler dh1(.input_A(yw),
+                        .input_B(w),
+                        .output(y_norm),
+                        .request(1'b1), // TODO: fix this
+                        .done(y_div_done),
+                        .clock(clock),
+                        .reset(reset));    
 
     //////////////////////////////////////
     // ADDERS FOR COORDINATE ADJUSTMENT //
@@ -118,9 +177,9 @@ module Coordinate_calculator // TODO NOTE: This might need further pipelining
     Round_to_Coords r1(.result(y_result),
                        .value(y_adjust));
 
-endmodule: Coordinate_calculator
+endmodule: Coordinate_Calculator
 
-module Transformation_datapath
+module Transformation_Datapath
   (output int         x_location, y_location,
    output logic [7:0] r, g, b,
    output int         x_lookup, y_lookup,
@@ -128,7 +187,7 @@ module Transformation_datapath
     input int         a, b, c, d, e, f, g, h,
     input logic [7:0] r_source, g_source, b_source,
     input logic       valid_coords,
-    input logic       clock);
+    input logic       clock, reset);
 
     //////////////////////////////////
     // PASS THROUGH FOR COORDINATES //
@@ -154,7 +213,7 @@ module Transformation_datapath
 
     {r,g,b} = (valid_coords) ? {r_source,g_source,b_source} : 24'b0;
 
-endmodule: Transformation_datapath
+endmodule: Transformation_Datapath
 
 /////////////////////////////////////////////////////////////////////
 //                                                                 //
@@ -167,11 +226,12 @@ endmodule: Transformation_datapath
 /////////////////////////////////////////////////////////////////////
 module Input_RAM_Handler #(parameter WIDTH=1920, HEIGHT=1080) 
 // TODO NOTE: Needs status, control, and timing signals
-  (output logic [7:0] r_out[1:0], g_out[1:0], b_out[1:0],
-   output logic       valid_coords[1:0],
-    input int         x_write[1:0], y_write[1:0],
-    input int         x_read[1:0],  y_read[1:0],
-    input logic [7:0] r_in[1:0], g_in[1:0], b_in[1:0]);
+  (output logic [7:0] r_out, g_out, b_out,
+   output logic       valid_coords,
+    input int         x_write, y_write,
+    input int         x_read,  y_read,
+    input logic [7:0] r_in, g_in, b_in,
+    input logic       reset, clock);
 
     ////////////////////////////////////
     // CHECK FOR VALID OUTPUT REQUEST //
@@ -180,19 +240,84 @@ module Input_RAM_Handler #(parameter WIDTH=1920, HEIGHT=1080)
     assign valid_coords[0] = (0<=x_read[0]<WIDTH) && (0<=y_read[0]<HEIGHT);
     assign valid_coords[1] = (0<=x_read[1]<WIDTH) && (0<=y_read[1]<HEIGHT);
 
-    // TODO NOTE: CHANGE THESE DRIVERS LATER
-    assign r_out[0] = 8'hFF;
-    assign r_out[1] = 8'hFF;
-    assign g_out[0] = 8'h00;
-    assign g_out[1] = 8'h00;
-    assign b_out[0] = 8'h00;
-    assign b_out[1] = 8'h00;
+    /////////////////////
+    // BLOCK RAM SETUP //
+    /////////////////////
+
+    logic [NUM_BRAMS-1:0][31:0] data_out, data_in;
+    logic [NUM_BRAMS-1:0] [9:0] read_addr, write_addr;
+    logic [NUM_BRAMS-1:0]       write_en, read_en;
+
+    logic [9:0] read_address;      
+    int         read_position,  read_index;
+    int        write_position, write_index;
+
+    // Flatten the read request address
+    always_comb begin
+        assert(NUM_BRAMS == 8);
+        case(y_read[2:0]): // Only do 8 rows at a time
+            3'd0: read_position = WIDTH*0 + x_read;
+            3'd1: read_position = WIDTH*1 + x_read;
+            3'd2: read_position = WIDTH*2 + x_read;
+            3'd3: read_position = WIDTH*3 + x_read;
+            3'd4: read_position = WIDTH*4 + x_read;
+            3'd5: read_position = WIDTH*5 + x_read;
+            3'd6: read_position = WIDTH*6 + x_read;
+            3'd7: read_position = WIDTH*7 + x_read;
+            default: read_position = 'X;
+        endcase // y_read[2:0]
+    end // always_comb
+
+    // Flatten the write request address
+    always_comb begin
+        assert(NUM_BRAMS == 8);
+        case(y_write[2:0]): // Only do 8 rows at a time
+            3'd0: write_position = WIDTH*0 + x_write;
+            3'd1: write_position = WIDTH*1 + x_write;
+            3'd2: write_position = WIDTH*2 + x_write;
+            3'd3: write_position = WIDTH*3 + x_write;
+            3'd4: write_position = WIDTH*4 + x_write;
+            3'd5: write_position = WIDTH*5 + x_write;
+            3'd6: write_position = WIDTH*6 + x_write;
+            3'd7: write_position = WIDTH*7 + x_write;
+            default: write_position = 'X;
+        endcase // y_read[2:0]
+    end // always_comb
+
+    // Determine which BRAM and what address for it
+    assign  read_address = read_position[9:0];
+    assign  read_index   = {10'b0, read_position[31:10]};
+    assign write_address = write_position[9:0];
+    assign write_index   = {10'b0, write_position[31:10]};
+
+    // Set up BRAM values
+    assign  read_addr[read_index]  = address;
+    assign  read_en[read_index]    = 1'b1;
+    assign write_addr[write_index] = address;
+    assign write_en[write_index]   = 1'b1;
+
+    // Grab the values
+    assign {r_out, g_out, b_out} = data_out[read_index][23:0];
+    assign data_in[write_index][31:0] = {8'b0, r_in, g_in, b_in};
 
     ////////////////
     // BLOCK RAMS //
-    ////////////////
+    ////////////////    
 
-    // TODO NOTE: INSTANTIATE RAMS HERE
+    generate
+        for (int i = 0; i < NUM_BRAMS; i = i + 1) begin : brams
+
+            bram BRAM_1024x32_Header(.DO(data_out[i]), 
+                                     .DI(data_in[i]),
+                                     .RDADDR(read_addr[i]), 
+                                     .RDCLK(clock), 
+                                     .RDEN(read_en[i]), 
+                                     .RST(reset),
+                                     .WRADDR(write_addr[i]), 
+                                     .WRCLK(clock), 
+                                     .WREN(write_en[i]));
+        end
+    endgenerate
 
 endmodule: Input_RAM_Handler
 
@@ -206,7 +331,7 @@ endmodule: Input_RAM_Handler
 //  - Outputs newly colored pixels two at a time.         //
 //                                                        //
 ////////////////////////////////////////////////////////////
-module Keystone_correction
+module Keystone_Correction
 ///////////////////////
 // OUTPUT AXI STREAM //
 ///////////////////////
@@ -227,22 +352,23 @@ module Keystone_correction
     input logic clock, clock_en, reset,
     input logic [31:0] m_map_registers[7:0]); // H Matrix
 
-    logic [7:0] r_in[1:0],  g_in[1:0],  b_in[1:0];
-    logic [7:0] r_out[1:0], g_out[1:0], b_out[1:0];
-    logic valid_coords[1:0];
-    int   current_x_input[1:0], current_y_input[1:0]; // TODO NOTE: drive these
-    int   x_lookup[1:0], y_lookup[1:0];
+    //////////////////////
+    // INTERNAL SIGNALS //
+    //////////////////////
+
+    logic [7:0] r_in,  g_in,  b_in;
+    logic [7:0] r_out, g_out, b_out;
+    logic valid_coords;
+    int   current_x_input, current_y_input; // TODO NOTE: drive these
+    int   x_lookup, y_lookup;
 
     /////////////////////////////////////
     // PARSE PIXEL COLOR DATA FROM BUS //
     /////////////////////////////////////
 
-    assign g_in[0] = pixel_stream_in[9:2];
-    assign b_in[0] = pixel_stream_in[19:12];
-    assign r_in[0] = pixel_stream_in[29:22];
-    assign g_in[1] = pixel_stream_in[39:32];
-    assign b_in[1] = pixel_stream_in[49:42];
-    assign r_in[1] = pixel_stream_in[59:52];
+    assign g_in = pixel_stream_in[9:2];
+    assign b_in = pixel_stream_in[19:12];
+    assign r_in = pixel_stream_in[29:22];
 
     //////////////////////////////////
     // RAM HANDLER FOR INPUT BUFFER //
@@ -252,7 +378,8 @@ module Keystone_correction
                          .valid_coords(valid_coords),
                          .x_write(current_x_input), .y_write(current_y_input),
                          .x_read(x_lookup), .y_read(y_lookup),
-                         .r_in(r_in), .g_in(g_in), .b_in(b_in));
+                         .r_in(r_in), .g_in(g_in), .b_in(b_in),
+                         .reset(reset), .clock(clock));
 
     ///////////////////////////////////
     // RAM HANDLER FOR OUTPUT BUFFER //
@@ -264,31 +391,19 @@ module Keystone_correction
     // DATAPATHS FOR COLOR CALCULATION //
     /////////////////////////////////////
 
-    Transformation_datapath d0(.x_location(),    // TODO NOTE: hook this up
+    Transformation_Datapath d0(.x_location(),    // TODO NOTE: hook this up
                                .y_location(),    // TODO NOTE: same ^
                                .r(), .g(), .b(), // TODO NOTE: same ^^
-                               .x_lookup(x_lookup[0]), 
-                               .y_lookup(y_lookup[0]),
+                               .x_lookup(x_lookup), 
+                               .y_lookup(y_lookup),
                                .x(current_x_calc), // TODO NOTE: Drive this
                                .y(current_y_calc), // TODO NOTE: same
-                               .r_source(r_out[0]),
-                               .g_source(g_out[0]),
-                               .b_source(b_out[0]),
-                               .valid_coords(valid_coords[0]),
-                               .clock(clock));
-
-    Transformation_datapath d1(.x_location(),    // TODO NOTE: hook this up
-                               .y_location(),    // TODO NOTE: same ^
-                               .r(), .g(), .b(), // TODO NOTE: same ^^
-                               .x_lookup(x_lookup[1]), 
-                               .y_lookup(y_lookup[1]),
-                               .x(current_x_calc), // TODO NOTE: Drive this
-                               .y(current_y_calc), // TODO NOTE: same
-                               .r_source(r_out[1]),
-                               .g_source(g_out[1]),
-                               .b_source(b_out[1]),
-                               .valid_coords(valid_coords[1]),
-                               .clock(clock));
+                               .r_source(r_out),
+                               .g_source(g_out),
+                               .b_source(b_out),
+                               .valid_coords(valid_coords),
+                               .clock(clock),
+                               .reset(reset));
 
     ////////////////
     // CONTROLLER //
@@ -309,4 +424,4 @@ module Keystone_correction
     // TODO NOTE: Either write this or implement it as part of CONTROLLER
     //            At the very least, assign colors of output bus stream
 
-endmodule: Keystone_correction 
+endmodule: Keystone_Correction 
