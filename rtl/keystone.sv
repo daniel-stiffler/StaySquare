@@ -3,6 +3,7 @@
    SystemVerilog implementation of Keystone Correction IP block. 
 */
 
+`default_nettype none
 `define NUM_BRAMS 8
 
 //////////////////////////////////////////////////////
@@ -33,7 +34,35 @@ module Round_to_Coords
 endmodule: Round_to_Coords
 
 module Divider_Handler
-    ();
+    (input logic [31:0] input_A, input_B,
+    output logic [47:0] out,
+     input logic request, clock, reset,
+    output logic done);
+
+    int cycle;
+
+    // TODO: a lot of arrays here
+
+    generate
+        genvar j;
+        for (j = 0; j < `NUM_DIVS; j = j + 1) begin : divs
+            base_mb_div_gen_0_0 d(.aclk(clock),
+                          .s_axis_divisor_tvalid(b_valid[j]),
+                          .s_axis_divisor_tready(b_ready[j]),
+                          .s_axis_divisor_tdata(b_data[j]),
+                          .s_axis_dividend_tvalid(a_valid[j]),
+                          .s_axis_dividend_tready(a_ready[j]),
+                          .s_axis_dividend_tdata(a_data[j]),
+                          .m_axis_dout_tvalid(out_valid[j]),
+                          .m_axis_dout_tdata(out_data[j]));
+        end // divs
+    endgenerate
+
+    always_ff @(posedge clock) begin
+             if(reset)      cycle <= 0;
+        else if(cycle == 5) cycle <= 0;
+        else                cycle <= cycle + 1;
+    end
 
 endmodule: Divider_Handler
 
@@ -44,14 +73,25 @@ module Multiplier_Handler
      input logic request, 
     output logic done);
 
-    // generate
-    //     for (int j = 0; j < MULT_LATENCY; j = j + 1) begin : mults
-            
-    //         base_mb_mult_gen_0_0 m(.CLK(clock),
-    //                                .A);
+    logic req_1, req_2, req_3;
+    logic req_4, req_5;
 
-    //     end // mults
-    // endgenerate
+    base_mb_mult_gen_0_0 m(.CLK(clock), .*);
+
+    assign done = req_5;
+
+    // Delay request by 5 cycles to indicate end of 6 stage pipeline
+    always_ff @(posedge clock) begin
+        if(reset) begin
+            {req_1,req_2,req_3,req_4,req_5} <= 5'b00000;
+        end else begin
+            req_1 <= request;
+            req_2 <= req_1;
+            req_3 <= req_2;
+            req_4 <= req_3;
+            req_5 <= req_4;
+        end
+    end
 
 endmodule: Multiplier_Handler
 
@@ -67,7 +107,7 @@ endmodule: Multiplier_Handler
 module Coordinate_Calculator // TODO NOTE: This might need further pipelining
  #(parameter WIDTH=1920, HEIGHT=1080)
   (output int x_result, y_result,
-    input logic clock, reset
+    input logic clock, reset,
     input int x, y,
     input int a, b, c, d, e, f, g, h);
 
@@ -145,7 +185,7 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
 
     Divider_Handler dh0(.input_A(xw),
                         .input_B(w),
-                        .output(x_norm),
+                        .out(x_norm),
                         .request(1'b1), // TODO: fix this
                         .done(x_div_done),
                         .clock(clock),
@@ -153,7 +193,7 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
 
     Divider_Handler dh1(.input_A(yw),
                         .input_B(w),
-                        .output(y_norm),
+                        .out(y_norm),
                         .request(1'b1), // TODO: fix this
                         .done(y_div_done),
                         .clock(clock),
@@ -181,7 +221,7 @@ endmodule: Coordinate_Calculator
 
 module Transformation_Datapath
   (output int         x_location, y_location,
-   output logic [7:0] r, g, b,
+   output logic [7:0] red, green, blue,
    output int         x_lookup, y_lookup,
     input int         x, y,
     input int         a, b, c, d, e, f, g, h,
@@ -211,7 +251,7 @@ module Transformation_Datapath
     // MULTIPLEXOR TO SELECT OUTPUT COLOR VALUE //
     //////////////////////////////////////////////
 
-    {r,g,b} = (valid_coords) ? {r_source,g_source,b_source} : 24'b0;
+    assign {red,green,blue} = (valid_coords)?{r_source,g_source,b_source}:24'b0;
 
 endmodule: Transformation_Datapath
 
@@ -244,18 +284,18 @@ module Input_RAM_Handler #(parameter WIDTH=1920, HEIGHT=1080)
     // BLOCK RAM SETUP //
     /////////////////////
 
-    logic [NUM_BRAMS-1:0][31:0] data_out, data_in;
-    logic [NUM_BRAMS-1:0] [9:0] read_addr, write_addr;
-    logic [NUM_BRAMS-1:0]       write_en, read_en;
+    logic [`NUM_BRAMS-1:0][31:0] data_out, data_in;
+    logic [`NUM_BRAMS-1:0] [9:0] read_addr, write_addr;
+    logic [`NUM_BRAMS-1:0]       write_en, read_en;
 
-    logic [9:0] read_address;      
+    logic [9:0] read_address, write_address;      
     int         read_position,  read_index;
     int        write_position, write_index;
 
     // Flatten the read request address
     always_comb begin
-        assert(NUM_BRAMS == 8);
-        case(y_read[2:0]): // Only do 8 rows at a time
+        assert(`NUM_BRAMS == 8);
+        case(y_read[2:0]) // Only do 8 rows at a time
             3'd0: read_position = WIDTH*0 + x_read;
             3'd1: read_position = WIDTH*1 + x_read;
             3'd2: read_position = WIDTH*2 + x_read;
@@ -270,8 +310,8 @@ module Input_RAM_Handler #(parameter WIDTH=1920, HEIGHT=1080)
 
     // Flatten the write request address
     always_comb begin
-        assert(NUM_BRAMS == 8);
-        case(y_write[2:0]): // Only do 8 rows at a time
+        assert(`NUM_BRAMS == 8);
+        case(y_write[2:0]) // Only do 8 rows at a time
             3'd0: write_position = WIDTH*0 + x_write;
             3'd1: write_position = WIDTH*1 + x_write;
             3'd2: write_position = WIDTH*2 + x_write;
@@ -291,9 +331,9 @@ module Input_RAM_Handler #(parameter WIDTH=1920, HEIGHT=1080)
     assign write_index   = {10'b0, write_position[31:10]};
 
     // Set up BRAM values
-    assign  read_addr[read_index]  = address;
+    assign  read_addr[read_index]  = read_address;
     assign  read_en[read_index]    = 1'b1;
-    assign write_addr[write_index] = address;
+    assign write_addr[write_index] = write_address;
     assign write_en[write_index]   = 1'b1;
 
     // Grab the values
@@ -305,7 +345,8 @@ module Input_RAM_Handler #(parameter WIDTH=1920, HEIGHT=1080)
     ////////////////    
 
     generate
-        for (int i = 0; i < NUM_BRAMS; i = i + 1) begin : brams
+        genvar i;
+        for (i = 0; i < `NUM_BRAMS; i = i + 1) begin : brams
 
             bram BRAM_1024x32_Header(.DO(data_out[i]), 
                                      .DI(data_in[i]),
@@ -361,6 +402,7 @@ module Keystone_Correction
     logic valid_coords;
     int   current_x_input, current_y_input; // TODO NOTE: drive these
     int   x_lookup, y_lookup;
+    int   current_x_calc, current_y_calc;
 
     /////////////////////////////////////
     // PARSE PIXEL COLOR DATA FROM BUS //
@@ -393,7 +435,7 @@ module Keystone_Correction
 
     Transformation_Datapath d0(.x_location(),    // TODO NOTE: hook this up
                                .y_location(),    // TODO NOTE: same ^
-                               .r(), .g(), .b(), // TODO NOTE: same ^^
+                               .red(), .green(), .blue(), // TODO NOTE: same ^^
                                .x_lookup(x_lookup), 
                                .y_lookup(y_lookup),
                                .x(current_x_calc), // TODO NOTE: Drive this
