@@ -4,7 +4,32 @@
 */
 
 `default_nettype none
-`define NUM_BRAMS 8
+`define BRAM_ROWS 16
+`define WIDTH 1920
+`define HEIGHT 1080
+
+//////////////////////////////////////////////////////
+//                                                  //
+// Counter module increments a stored 32-bit value. //
+//                                                  //
+//  - On clear & incr, will set next value to 0.    //
+//  - Asynchronous reset.                           //
+//                                                  //
+//////////////////////////////////////////////////////
+module Counter #(parameter SIZE = 32)
+  (output logic [SIZE-1:0] value,
+    input logic reset, clock,
+    input logic clear, incr);
+
+    always_ff @(posedge clock or posedge reset)
+             if( reset == 1'b1 ) value <= '0;
+        else if( clear & ~incr ) value <= '0;
+        else if(~clear &  incr ) value <= value + 1;
+        else if( clear &  incr ) value <= '0; // !!!
+        else                     value <= value;
+    end
+
+endmodule: Counter
 
 //////////////////////////////////////////////////////
 //                                                  //
@@ -44,17 +69,17 @@ module Divider_Handler
     // TODO: a lot of arrays here
 
     generate
-        genvar j;
-        for (j = 0; j < `NUM_DIVS; j = j + 1) begin : divs
+        genvar k;
+        for (k = 0; k < `NUM_DIVS; k = k + 1) begin : divs
             base_mb_div_gen_0_0 d(.aclk(clock),
-                          .s_axis_divisor_tvalid(b_valid[j]),
-                          .s_axis_divisor_tready(b_ready[j]),
-                          .s_axis_divisor_tdata(b_data[j]),
-                          .s_axis_dividend_tvalid(a_valid[j]),
-                          .s_axis_dividend_tready(a_ready[j]),
-                          .s_axis_dividend_tdata(a_data[j]),
-                          .m_axis_dout_tvalid(out_valid[j]),
-                          .m_axis_dout_tdata(out_data[j]));
+                          .s_axis_divisor_tvalid(b_valid[k]),
+                          .s_axis_divisor_tready(b_ready[k]),
+                          .s_axis_divisor_tdata(b_data[k]),
+                          .s_axis_dividend_tvalid(a_valid[k]),
+                          .s_axis_dividend_tready(a_ready[k]),
+                          .s_axis_dividend_tdata(a_data[k]),
+                          .m_axis_dout_tvalid(out_valid[k]),
+                          .m_axis_dout_tdata(out_data[k]));
         end // divs
     endgenerate
 
@@ -105,7 +130,6 @@ endmodule: Multiplier_Handler
 //                                                           //
 ///////////////////////////////////////////////////////////////
 module Coordinate_Calculator // TODO NOTE: This might need further pipelining
- #(parameter WIDTH=1920, HEIGHT=1080)
   (output int x_result, y_result,
     input logic clock, reset,
     input int x, y,
@@ -204,8 +228,8 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
     //////////////////////////////////////
 
     // Division evaluated at compile-time
-    assign x_adjust = x_norm +  WIDTH / 2;
-    assign y_adjust = y_norm + HEIGHT / 2;
+    assign x_adjust = x_norm +  `WIDTH / 2;
+    assign y_adjust = y_norm + `HEIGHT / 2;
 
     ///////////////////////////////////////////
     // ROUNDERS TO CONVERT TO INT FOR LOOKUP //
@@ -259,86 +283,95 @@ endmodule: Transformation_Datapath
 //                                                                 //
 // Input Ram Handler services read / write requests for block RAM. //
 //                                                                 //
-//  - Handler input dual-ported to service both incoming pixels.   //
-//  - Handler output dual-ported to service both datapath insts.   //
-//  - Handler reports whether the output request address is valid. //
-//                                                                 //
 /////////////////////////////////////////////////////////////////////
-module Input_RAM_Handler #(parameter WIDTH=1920, HEIGHT=1080) 
-// TODO NOTE: Needs status, control, and timing signals
+module Input_RAM_Controller
   (output logic [7:0] r_out, g_out, b_out,
    output logic       valid_coords,
     input int         x_write, y_write,
     input int         x_read,  y_read,
     input logic [7:0] r_in, g_in, b_in,
-    input logic       reset, clock);
+    input logic       write_request, read_request,
+    input logic       reset, clock, start_of_frame);
 
-    ////////////////////////////////////
-    // CHECK FOR VALID OUTPUT REQUEST //
-    ////////////////////////////////////
+    //////////////////////////////////
+    // CHECK FOR VALID READ REQUEST //
+    //////////////////////////////////
 
-    assign valid_coords[0] = (0<=x_read[0]<WIDTH) && (0<=y_read[0]<HEIGHT);
-    assign valid_coords[1] = (0<=x_read[1]<WIDTH) && (0<=y_read[1]<HEIGHT);
+    assign valid_coords = (0<=x_read<`WIDTH) && (0<=y_read<`HEIGHT);
 
     /////////////////////
     // BLOCK RAM SETUP //
     /////////////////////
 
-    logic [`NUM_BRAMS-1:0][31:0] data_out, data_in;
-    logic [`NUM_BRAMS-1:0] [9:0] read_addr, write_addr;
-    logic [`NUM_BRAMS-1:0]       write_en, read_en;
+    logic [31:0] data_out[0:`BRAM_ROWS-1][0:1];
+    logic [31:0]  data_in[0:`BRAM_ROWS-1][0:1];
 
-    logic [9:0] read_address, write_address;      
-    int         read_position,  read_index;
-    int        write_position, write_index;
+    logic  [9:0]  read_addr[0:`BRAM_ROWS-1][0:1];
+    logic  [9:0] write_addr[0:`BRAM_ROWS-1][0:1];
 
-    // Flatten the read request address
+    logic        write_en[0:`BRAM_ROWS-1][0:1];
+    logic         read_en[0:`BRAM_ROWS-1][0:1];
+
+    logic [$clog2(`BRAM_ROWS)-1:0] bram_row_write, bram_row_read;
+    logic                    [9:0] pos_bram_write, pos_bram_read;
+    logic                          bram_col_write, bram_col_read;
+    logic [31:0] write_value, read_value;
+
+    logic [7:0] pass_count_read;
+    logic [7:0] pass_count_write;
+    logic [7:0] pass_count_reported;
+
+    assign bram_row_write = y_write[$clog2(`BRAM_ROWS)-1:0];
+    assign bram_row_read  = y_read[$clog2(`BRAM_ROWS)-1:0];
+    assign bram_col_write = x_write[10];  // x / 1024;
+    assign bram_col_read  = x_read[10];  
+    assign pos_bram_write = x_write[9:0]; // x % 1024;
+    assign pos_bram_read  = x_read[9:0];
+
+    //////////////////
+    // PASS COUNTER //
+    //////////////////
+
+    logic clear_count, incr_count;
+    logic end_col, end_row;
+
+    assign end_col = (x_write  == (`WIDTH-1));
+    assign end_row = (bram_row_write == (`BRAM_ROWS-1));
+
+    assign clear_count = (start_of_frame | (end_col & end_row));
+    assign  incr_count = (end_col & ~end_row);
+
+    Counter #(8) c(.value(pass_count_write),
+                   .reset(reset),
+                   .clock(clock),
+                   .clear(clear_count),
+                   .incr(incr_count));
+
+    /////////////////
+    // BRAM VALUES //
+    /////////////////
+
+    assign write_value = {pass_count_write, r_in, g_in, b_in};
+    assign data_in[bram_row_write][bram_col_write] = write_value;
+    assign write_addr[bram_row_write][bram_col_write] = {22'b0,pos_bram_write};
+    assign write_en[bram_row_write][bram_col_write] = write_request;
+
+    assign read_value = data_out[bram_row_read][bram_col_read];
+    assign pass_count_reported = read_value[31:24];
+    assign read_addr[bram_row_read][bram_col_read] = {22'b0,pos_bram_read};
+    assign read_en[bram_row_read][bram_col_read] = read_request;
+
     always_comb begin
-        assert(`NUM_BRAMS == 8);
-        case(y_read[2:0]) // Only do 8 rows at a time
-            3'd0: read_position = WIDTH*0 + x_read;
-            3'd1: read_position = WIDTH*1 + x_read;
-            3'd2: read_position = WIDTH*2 + x_read;
-            3'd3: read_position = WIDTH*3 + x_read;
-            3'd4: read_position = WIDTH*4 + x_read;
-            3'd5: read_position = WIDTH*5 + x_read;
-            3'd6: read_position = WIDTH*6 + x_read;
-            3'd7: read_position = WIDTH*7 + x_read;
-            default: read_position = 'X;
-        endcase // y_read[2:0]
-    end // always_comb
-
-    // Flatten the write request address
-    always_comb begin
-        assert(`NUM_BRAMS == 8);
-        case(y_write[2:0]) // Only do 8 rows at a time
-            3'd0: write_position = WIDTH*0 + x_write;
-            3'd1: write_position = WIDTH*1 + x_write;
-            3'd2: write_position = WIDTH*2 + x_write;
-            3'd3: write_position = WIDTH*3 + x_write;
-            3'd4: write_position = WIDTH*4 + x_write;
-            3'd5: write_position = WIDTH*5 + x_write;
-            3'd6: write_position = WIDTH*6 + x_write;
-            3'd7: write_position = WIDTH*7 + x_write;
-            default: write_position = 'X;
-        endcase // y_read[2:0]
-    end // always_comb
-
-    // Determine which BRAM and what address for it
-    assign  read_address = read_position[9:0];
-    assign  read_index   = {10'b0, read_position[31:10]};
-    assign write_address = write_position[9:0];
-    assign write_index   = {10'b0, write_position[31:10]};
-
-    // Set up BRAM values
-    assign  read_addr[read_index]  = read_address;
-    assign  read_en[read_index]    = 1'b1;
-    assign write_addr[write_index] = write_address;
-    assign write_en[write_index]   = 1'b1;
-
-    // Grab the values
-    assign {r_out, g_out, b_out} = data_out[read_index][23:0];
-    assign data_in[write_index][31:0] = {8'b0, r_in, g_in, b_in};
+        if(pass_count_reported == pass_count_read) begin
+            r_out = read_value[23:16];
+            g_out = read_value[15: 8];
+            b_out = read_value[ 7: 0];
+        end else begin // hot pink
+            r_out = 8'hFF;
+            g_out = 8'h1E;
+            b_out = 8'hA6;
+        end
+    end
 
     ////////////////
     // BLOCK RAMS //
@@ -346,21 +379,24 @@ module Input_RAM_Handler #(parameter WIDTH=1920, HEIGHT=1080)
 
     generate
         genvar i;
-        for (i = 0; i < `NUM_BRAMS; i = i + 1) begin : brams
+        genvar j;
+        for (i = 0; i < `BRAM_ROWS; i = i + 1) begin : rows_of_bram
+            for (j = 0; j < 2; j = j + 1) begin cols_of_bram
 
-            bram BRAM_1024x32_Header(.DO(data_out[i]), 
-                                     .DI(data_in[i]),
-                                     .RDADDR(read_addr[i]), 
-                                     .RDCLK(clock), 
-                                     .RDEN(read_en[i]), 
-                                     .RST(reset),
-                                     .WRADDR(write_addr[i]), 
-                                     .WRCLK(clock), 
-                                     .WREN(write_en[i]));
-        end
+                bram BRAM_1024x32_Header(.DO(data_out[i][j]), 
+                                         .DI(data_in[i][j]),
+                                         .RDADDR(read_addr[i][j]), 
+                                         .RDCLK(clock), 
+                                         .RDEN(read_en[i][j]), 
+                                         .RST(reset),
+                                         .WRADDR(write_addr[i][j]), 
+                                         .WRCLK(clock), 
+                                         .WREN(write_en[i][j]));
+            end // rows_of_bram
+        end // cols_of_bram
     endgenerate
 
-endmodule: Input_RAM_Handler
+endmodule: Input_RAM_Controller
 
 ////////////////////////////////////////////////////////////
 //                                                        //
@@ -416,12 +452,13 @@ module Keystone_Correction
     // RAM HANDLER FOR INPUT BUFFER //
     //////////////////////////////////
 
-    Input_RAM_Handler h0(.r_out(), .g_out(), .b_out(),
-                         .valid_coords(valid_coords),
-                         .x_write(current_x_input), .y_write(current_y_input),
-                         .x_read(x_lookup), .y_read(y_lookup),
-                         .r_in(r_in), .g_in(g_in), .b_in(b_in),
-                         .reset(reset), .clock(clock));
+    Input_RAM_Controller c0(.r_out(), .g_out(), .b_out(),
+                            .valid_coords(valid_coords),
+                            .x_write(current_x_input), .y_write(current_y_input),
+                            .x_read(x_lookup), .y_read(y_lookup),
+                            .r_in(r_in), .g_in(g_in), .b_in(b_in),
+                            .reset(reset), .clock(clock), 
+                            .start_of_frame(start_of_frame));
 
     ///////////////////////////////////
     // RAM HANDLER FOR OUTPUT BUFFER //
