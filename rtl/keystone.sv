@@ -5,6 +5,7 @@
 
 `default_nettype none
 `define BRAM_ROWS 16
+`define NUM_DIVS 31
 `define WIDTH 1920
 `define HEIGHT 1080
 
@@ -58,6 +59,17 @@ module Round_to_Coords
 
 endmodule: Round_to_Coords
 
+/////////////////////////////////////////////////////////
+//                                                     //
+// Divider handler assigns requests to open dividers.  //
+//                                                     //
+//  - Xilinx High Radix algorithm.                     //
+//    - Each divider has maximum 31 cycles of latency. //
+//    - Returns 48 bit result.                         //
+//      - 32 bit quotient.                             //
+//      - 16 bit fractional remainder.                 //
+//                                                     //
+/////////////////////////////////////////////////////////
 module Divider_Handler
     (input logic [31:0] input_A, input_B,
     output logic [47:0] out,
@@ -84,13 +96,22 @@ module Divider_Handler
     endgenerate
 
     always_ff @(posedge clock) begin
-             if(reset)      cycle <= 0;
-        else if(cycle == 5) cycle <= 0;
-        else                cycle <= cycle + 1;
+             if(reset)              cycle <= 0;
+        else if(cycle == `NUM_DIVS) cycle <= 0;
+        else                        cycle <= cycle + 1;
     end
 
 endmodule: Divider_Handler
 
+//////////////////////////////////////////////////////////
+//                                                      //
+// Multiplier handler wraps multipliers for pipelining. //
+//                                                      //
+//  - Xilinx 32 x 32 bit multiplier.                    //
+//    - Six-stage pipeline.                             //
+//    - Returns 64 bit result.                          //
+//                                                      //
+//////////////////////////////////////////////////////////
 module Multiplier_Handler
     (input logic clock, reset, 
     output logic [63:0] P, 
@@ -291,7 +312,7 @@ module Input_RAM_Controller
     input int         x_read,  y_read,
     input logic [7:0] r_in, g_in, b_in,
     input logic       write_request, read_request,
-    input logic       reset, clock, start_of_frame);
+    input logic       reset, clock, done_dest_frame);
 
     //////////////////////////////////
     // CHECK FOR VALID READ REQUEST //
@@ -332,20 +353,22 @@ module Input_RAM_Controller
     // PASS COUNTER //
     //////////////////
 
-    logic clear_count, incr_count;
-    logic end_col, end_row;
+    logic clear_count, done_src_frame;
 
-    assign end_col = (x_write  == (`WIDTH-1));
-    assign end_row = (bram_row_write == (`BRAM_ROWS-1));
+    assign done_src_frame = ( (x_write ==  (`WIDTH-1)) &&
+                              (y_write == (`HEIGHT-1)) );
 
-    assign clear_count = (start_of_frame | (end_col & end_row));
-    assign  incr_count = (end_col & ~end_row);
-
-    Counter #(8) c(.value(pass_count_write),
+    Counter #(8) p(.value(pass_count_write),
                    .reset(reset),
                    .clock(clock),
-                   .clear(clear_count),
-                   .incr(incr_count));
+                   .clear(1'b0),
+                   .incr(done_src_frame));
+
+    Counter #(8) c(.value(pass_count_read),
+                   .reset(reset),
+                   .clock(clock),
+                   .clear(1'b0),
+                   .incr(done_dest_frame));
 
     /////////////////
     // BRAM VALUES //
@@ -452,19 +475,22 @@ module Keystone_Correction
     // RAM HANDLER FOR INPUT BUFFER //
     //////////////////////////////////
 
+    assign done_dest_frame = ( (current_x_calc ==  (`WIDTH-1)) &&
+                               (current_y_calc == (`HEIGHT-1)) );
+
     Input_RAM_Controller c0(.r_out(), .g_out(), .b_out(),
                             .valid_coords(valid_coords),
                             .x_write(current_x_input), .y_write(current_y_input),
                             .x_read(x_lookup), .y_read(y_lookup),
                             .r_in(r_in), .g_in(g_in), .b_in(b_in),
                             .reset(reset), .clock(clock), 
-                            .start_of_frame(start_of_frame));
+                            .done_dest_frame(done_dest_frame));
 
     ///////////////////////////////////
     // RAM HANDLER FOR OUTPUT BUFFER //
     ///////////////////////////////////
 
-    // TODO NOTE: Write this  
+    // TODO NOTE: What should this be? 
 
     /////////////////////////////////////
     // DATAPATHS FOR COLOR CALCULATION //
