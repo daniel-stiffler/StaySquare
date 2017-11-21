@@ -305,9 +305,9 @@ endmodule: Transformation_Datapath
 // Input Ram Handler services read / write requests for block RAM. //
 //                                                                 //
 /////////////////////////////////////////////////////////////////////
-module Input_RAM_Controller
+module Input_BRAM_Controller
   (output logic [7:0] r_out, g_out, b_out,
-   output logic       valid_coords,
+   output logic       valid_coords, done,
     input int         x_write, y_write,
     input int         x_read,  y_read,
     input logic [7:0] r_in, g_in, b_in,
@@ -389,10 +389,13 @@ module Input_RAM_Controller
             r_out = read_value[23:16];
             g_out = read_value[15: 8];
             b_out = read_value[ 7: 0];
+            done  = (((x_read < x_write) && (y_read == y_write)) 
+                                         || (y_read  < y_write));
         end else begin // hot pink
             r_out = 8'hFF;
             g_out = 8'h1E;
             b_out = 8'hA6;
+            done  = 1'b1;
         end
     end
 
@@ -419,7 +422,7 @@ module Input_RAM_Controller
         end // cols_of_bram
     endgenerate
 
-endmodule: Input_RAM_Controller
+endmodule: Input_BRAM_Controller
 
 ////////////////////////////////////////////////////////////
 //                                                        //
@@ -436,7 +439,8 @@ module Keystone_Correction
 // OUTPUT AXI STREAM //
 ///////////////////////
   (output logic [63:0] pixel_stream_out,
-   output logic        ready,
+   output logic        valid_out, ready_out,
+   output logic        start_of_frame_out, end_of_line_out,
 /////////////////////
 // OUTPUT AXI LITE //
 /////////////////////
@@ -445,7 +449,8 @@ module Keystone_Correction
 // INPUT AXI STREAM //
 //////////////////////
     input logic [63:0] pixel_stream_in,
-    input logic        valid, start_of_frame, end_of_line,
+    input logic        valid_in, ready_in,
+    input logic        start_of_frame_in, end_of_line_in,
 ////////////////////
 // INPUT AXI LITE //
 ////////////////////
@@ -458,7 +463,7 @@ module Keystone_Correction
 
     logic [7:0] r_in,  g_in,  b_in;
     logic [7:0] r_out, g_out, b_out;
-    logic valid_coords;
+    logic valid_coords, read_done;
     int   current_x_input, current_y_input; // TODO NOTE: drive these
     int   x_lookup, y_lookup;
     int   current_x_calc, current_y_calc;
@@ -478,8 +483,8 @@ module Keystone_Correction
     assign done_dest_frame = ( (current_x_calc ==  (`WIDTH-1)) &&
                                (current_y_calc == (`HEIGHT-1)) );
 
-    Input_RAM_Controller c0(.r_out(), .g_out(), .b_out(),
-                            .valid_coords(valid_coords),
+    Input_BRAM_Controller c0(.r_out(), .g_out(), .b_out(),
+                            .valid_coords(valid_coords), .done(read_done),
                             .x_write(current_x_input), .y_write(current_y_input),
                             .x_read(x_lookup), .y_read(y_lookup),
                             .r_in(r_in), .g_in(g_in), .b_in(b_in),
