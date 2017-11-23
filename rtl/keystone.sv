@@ -342,8 +342,8 @@ module Input_BRAM_Controller
     logic [7:0] pass_count_write;
     logic [7:0] pass_count_reported;
 
-    assign bram_row_write = y_write[$clog2(`BRAM_ROWS)-1:0];
-    assign bram_row_read  = y_read[$clog2(`BRAM_ROWS)-1:0];
+    assign bram_row_write = y_write[$clog2(`BRAM_ROWS)-1:0]; // y % BRAM_ROWS
+    assign bram_row_read  = y_read[$clog2(`BRAM_ROWS)-1:0];  // y % BRAM_ROWS
     assign bram_col_write = x_write[10];  // x / 1024;
     assign bram_col_read  = x_read[10];  
     assign pos_bram_write = x_write[9:0]; // x % 1024;
@@ -508,6 +508,10 @@ module Keystone_Correction
                                .y_lookup(y_lookup),
                                .x(current_x_calc), // TODO NOTE: Drive this
                                .y(current_y_calc), // TODO NOTE: same
+                               .a(), .b(), 
+                               .c(), .d(), 
+                               .e(), .f(), 
+                               .g(), .h(),
                                .r_source(r_out),
                                .g_source(g_out),
                                .b_source(b_out),
