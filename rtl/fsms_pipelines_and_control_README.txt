@@ -23,7 +23,13 @@ Dividers
  - only empties the LRU divider if datapath end is ready
  - asserts valid if LRU divider is finished
 
-Multipliers 
+Multipliers (beginning of datapath)
  - pipelines dest location with the multiplication request
  - if dividers assert not ready, freeze the pipelines by deasserting clken
- - report ready as a passthrough of valid
+ - report ready to Control FSM as passthrough of divider ready
+
+Control FSM
+ - Receives valid for incoming pixel from before our IP
+ - controls the registers that count which pixel of output is being calculated
+ - sends dest pixel location and request to the datapath if datapath ready
+ - sends ready out of IP as passthrough of datapath ready
