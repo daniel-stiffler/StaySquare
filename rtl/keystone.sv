@@ -523,7 +523,35 @@ module Keystone_Correction
     // CONTROLLER //
     ////////////////
 
-    // TODO NOTE: Write this
+    enum logic [1:0] {WAIT_FOR_PIX, VALID_PIX, PRESSURE} currState, nextState;
+
+    always_ff @(posedge clock) begin
+        if(reset) currState <= WAIT_FOR_PIX;
+        else      currState <= nextState;
+    end
+
+    always_comb begin
+
+        nextState = currState;
+        ready_out = ready_from_datapath_start;
+        valid_to_datapath_start = 1'b0
+
+        case(currState)
+            WAIT_FOR_PIX: begin
+                if(~ready_from_datapath_start) nextState = PRESSURE;
+                else nextState = (valid_in & start_of_frame_in) ? VALID_PIX : WAIT_FOR_PIX;
+                valid_to_datapath_start = 1'b1;
+            end
+            VALID_PIX: begin
+                if(~ready_from_datapath_start) nextState = PRESSURE;
+                else nextState = (valid_in & ~end_of_line_in) ? VALID_PIX : WAIT_FOR_PIX;
+            end
+            PRESSURE: begin
+                if(~ready_from_datapath_start) nextState = PRESSURE;
+                else nextState = (valid_in) ? VALID_PIX : WAIT_FOR_PIX;
+            end
+        endcase // currState
+    end
 
     /////////////
     // H LATCH //
