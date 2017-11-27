@@ -268,6 +268,8 @@ module Transformation_Datapath
   (output int         x_location, y_location,
    output logic [7:0] red, green, blue,
    output int         x_lookup, y_lookup,
+   output logic       ready,
+    input logic       valid,
     input int         x, y,
     input int         a, b, c, d, e, f, g, h,
     input logic [7:0] r_source, g_source, b_source,
@@ -282,7 +284,7 @@ module Transformation_Datapath
     // but that color will be displayed at the originally provided location!
     // As such, pass this value through.
     assign x_location = x;
-    assign y_location = y;
+    assign y_location = y; // TODO: Fix this. Pipeline the location with pixel
 
     ////////////////////////////////////////////
     // CALCULATE COORDINATES FOR COLOR LOOKUP //
@@ -461,12 +463,16 @@ module Keystone_Correction
     // INTERNAL SIGNALS //
     //////////////////////
 
+    logic [63:0] output_pixel_packet;
     logic [7:0] r_in,  g_in,  b_in;
     logic [7:0] r_out, g_out, b_out;
+    logic [7:0] r_calc, g_calc, b_calc;
     logic valid_coords, read_done;
+    logic last_col_done, last_row_done;
     int   current_x_input, current_y_input; // TODO NOTE: drive these
     int   x_lookup, y_lookup;
     int   current_x_calc, current_y_calc;
+    int   done_pix_loc_x, done_pix_loc_y;
 
     /////////////////////////////////////
     // PARSE PIXEL COLOR DATA FROM BUS //
@@ -475,6 +481,10 @@ module Keystone_Correction
     assign g_in = pixel_stream_in[9:2];
     assign b_in = pixel_stream_in[19:12];
     assign r_in = pixel_stream_in[29:22];
+
+    assign output_pixel_packet[9:2]   = green;
+    assign output_pixel_packet[19:12] = blue;
+    assign output_pixel_packet[29:22] = red;    
 
     //////////////////////////////////
     // RAM HANDLER FOR INPUT BUFFER //
@@ -491,23 +501,19 @@ module Keystone_Correction
                             .reset(reset), .clock(clock), 
                             .done_dest_frame(done_dest_frame));
 
-    ///////////////////////////////////
-    // RAM HANDLER FOR OUTPUT BUFFER //
-    ///////////////////////////////////
-
-    // TODO NOTE: What should this be? 
-
     /////////////////////////////////////
     // DATAPATHS FOR COLOR CALCULATION //
     /////////////////////////////////////
 
-    Transformation_Datapath d0(.x_location(),    // TODO NOTE: hook this up
-                               .y_location(),    // TODO NOTE: same ^
-                               .red(), .green(), .blue(), // TODO NOTE: same ^^
+    Transformation_Datapath d0(.x_location(done_pix_loc_x),
+                               .y_location(done_pix_loc_y),
+                               .red(r_calc), .green(g_calc), .blue(b_calc),
                                .x_lookup(x_lookup), 
                                .y_lookup(y_lookup),
-                               .x(current_x_calc), // TODO NOTE: Drive this
-                               .y(current_y_calc), // TODO NOTE: same
+                               .ready(ready_out),
+                               .valid(valid_in),
+                               .x(current_x_calc),
+                               .y(current_y_calc),
                                .a(), .b(), 
                                .c(), .d(), 
                                .e(), .f(), 
@@ -523,35 +529,20 @@ module Keystone_Correction
     // CONTROLLER //
     ////////////////
 
-    enum logic [1:0] {WAIT_FOR_PIX, VALID_PIX, PRESSURE} currState, nextState;
+    assign last_col_done = ((read_done==1'b1) && (current_x_calc==`WIDTH));
+    assign last_row_done = ((read_done==1'b1) && (current_y_calc==`HEIGHT));
 
-    always_ff @(posedge clock) begin
-        if(reset) currState <= WAIT_FOR_PIX;
-        else      currState <= nextState;
-    end
+    Counter #(32) p(.value(current_x_calc),
+                    .reset(reset),
+                    .clock(clock),
+                    .clear(last_col_done),
+                    .incr(read_done));
 
-    always_comb begin
-
-        nextState = currState;
-        ready_out = ready_from_datapath_start;
-        valid_to_datapath_start = 1'b0
-
-        case(currState)
-            WAIT_FOR_PIX: begin
-                if(~ready_from_datapath_start) nextState = PRESSURE;
-                else nextState = (valid_in & start_of_frame_in) ? VALID_PIX : WAIT_FOR_PIX;
-                valid_to_datapath_start = 1'b1;
-            end
-            VALID_PIX: begin
-                if(~ready_from_datapath_start) nextState = PRESSURE;
-                else nextState = (valid_in & ~end_of_line_in) ? VALID_PIX : WAIT_FOR_PIX;
-            end
-            PRESSURE: begin
-                if(~ready_from_datapath_start) nextState = PRESSURE;
-                else nextState = (valid_in) ? VALID_PIX : WAIT_FOR_PIX;
-            end
-        endcase // currState
-    end
+    Counter #(32) c(.value(current_y_calc),
+                    .reset(reset),
+                    .clock(clock),
+                    .clear(last_row_done),
+                    .incr(last_col_done));
 
     /////////////
     // H LATCH //
@@ -559,11 +550,11 @@ module Keystone_Correction
 
     // TODO NOTE: Write this
 
-    /////////////////////////
-    // OUTPUT DATA HANDLER //
-    /////////////////////////
+    //////////////////
+    // OUTPUT QUEUE //
+    //////////////////
 
-    // TODO NOTE: Either write this or implement it as part of CONTROLLER
-    //            At the very least, assign colors of output bus stream
+    // TODO: put a queue here
+    assign pixel_stream_out = output_pixel_packet;
 
 endmodule: Keystone_Correction 
