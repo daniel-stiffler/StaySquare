@@ -72,11 +72,15 @@ endmodule: Round_to_Coords
 /////////////////////////////////////////////////////////
 module Divider_Handler
     (input wire [31:0] input_A, input_B,
+     input int dest_x_in, dest_y_in,
+     input wire  ready_in,
     output logic [47:0] out,
-     input wire request, clock, reset,
+    output int dest_x_out, dest_y_out,
+     input wire request, clock, reset, enable,
     output logic done);
 
-    int          cycle;
+    int          in_pointer, out_pointer;
+    
     logic        b_valid[0:`NUM_DIVS - 1];
     logic        b_ready[0:`NUM_DIVS - 1];
     logic [31:0] b_data[0:`NUM_DIVS - 1];
@@ -86,14 +90,21 @@ module Divider_Handler
     logic        out_valid[0:`NUM_DIVS - 1];
     logic [47:0] out_data[0:`NUM_DIVS - 1];
     
+    logic [47:0]  out_data_reg[0:`NUM_DIVS - 1];
+    int          dest_x_in_reg[0:`NUM_DIVS - 1];
+    int          dest_y_in_reg[0:`NUM_DIVS - 1];
+    
     // TODO: Lots of divider handling logic needed here
 
+    //////////////
+    // DIVIDERS //
+    //////////////
     generate
         genvar k;
         for (k = 0; k < `NUM_DIVS; k = k + 1) begin : divs
             div_gen_0 d(.aclk(clock),
-                        .aclken(1'b1),
-                        .aresetn(1'b0),
+                        .aclken(enable),
+                        .aresetn(~reset),
                         .s_axis_divisor_tvalid(b_valid[k]),
                         .s_axis_divisor_tready(b_ready[k]),
                         .s_axis_divisor_tdata(b_data[k]),
@@ -105,10 +116,75 @@ module Divider_Handler
         end // divs
     endgenerate
 
+    /////////////
+    // CONTROL //
+    /////////////
     always_ff @(posedge clock) begin
-             if(reset)              cycle <= 0;
-        else if(cycle == `NUM_DIVS) cycle <= 0;
-        else                        cycle <= cycle + 1;
+        if(reset)
+            in_pointer <= 0;
+        else if(in_pointer == `NUM_DIVS-1 && request == 1'b1) 
+            in_pointer <= 0;
+        else if(request)
+            in_pointer <= in_pointer + 1;
+    end
+    
+    int i;
+    always_comb begin
+        for(i = 0; i < `NUM_DIVS; i = i + 1) begin
+            if(i == in_pointer) begin
+                a_data[i]  = input_A;
+                a_valid[i] = request;
+                b_data[i]  = input_B;
+                b_valid[i] = request;
+            end else begin
+                a_data[i]  = '0;
+                a_valid[i] = 1'b0;
+                b_data[i]  = '0;
+                b_valid[i] = 1'b0;
+            end
+        end
+    end
+    
+    always_ff @(posedge clock) begin
+            if(reset)
+                out_pointer <= 0;
+            else if(out_pointer == `NUM_DIVS-1 && ready_in == 1'b1) 
+                out_pointer <= 0;
+            else if(ready_in)
+                out_pointer <= out_pointer + 1;
+    end
+    
+    assign        out =      out_data[out_pointer];
+    assign dest_x_out = dest_x_in_reg[out_pointer];
+    assign dest_y_out = dest_y_in_reg[out_pointer];
+    
+    ////////////////////////
+    // DEST LOCATION REGS //
+    ////////////////////////
+    int v;
+    always_ff @(posedge clock) begin
+        for(v = 0; v < `NUM_DIVS; v = v + 1) begin
+            if(reset) begin
+                dest_x_in_reg[v] = '0;
+                dest_y_in_reg[v] = '0;
+            end else if(in_pointer == v && request == 1'b1 && enable == 1'b1) begin
+                dest_x_in_reg[v] <= dest_x_in;
+                dest_y_in_reg[v] <= dest_y_in;
+            end
+        end
+    end
+    
+    //////////////////////
+    // OUTPUT REGISTERS //
+    //////////////////////
+    int u;
+    always_ff @(posedge clock) begin
+        for(u = 0; u < `NUM_DIVS; u = u + 1) begin
+            if(reset)
+                out_data_reg[u] <= '0;
+            else if(enable & out_valid[u])
+                out_data_reg[u] <= out_data[u];
+        end
     end
 
 endmodule: Divider_Handler
@@ -123,29 +199,53 @@ endmodule: Divider_Handler
 //                                                      //
 //////////////////////////////////////////////////////////
 module Multiplier_Handler
-    (input wire clock, reset, 
+    (input wire clock, reset, enable,
     output logic [63:0] P, 
      input wire [31:0] A, B, 
-     input wire request, 
+     input int dest_x_in, dest_y_in,
+    output int dest_x_out, dest_y_out,
+     input wire request,
     output logic done);
 
-    logic req_1, req_2, req_3;
-    logic req_4, req_5;
+    logic req_1, req_2, req_3, req_4, req_5;
+    
+    int dest_x_1, dest_x_2, dest_x_3, dest_x_4, dest_x_5;
+    int dest_y_1, dest_y_2, dest_y_3, dest_y_4, dest_y_5;
 
-    mult_gen_0 m(.CLK(clock), .CE(1'b1), .*);
+    mult_gen_0 m(.CLK(clock), .CE(enable), .*);
 
     assign done = req_5;
+    assign dest_x_out = dest_x_5;
+    assign dest_y_out = dest_y_5;
 
     // Delay request by 5 cycles to indicate end of 6 stage pipeline
     always_ff @(posedge clock) begin
         if(reset) begin
+        
             {req_1,req_2,req_3,req_4,req_5} <= 5'b00000;
-        end else begin
+            {dest_x_1,dest_x_2,dest_x_3,dest_x_4,dest_x_5} <= {32'b0,32'b0,32'b0,32'b0,32'b0};
+            {dest_y_1,dest_y_2,dest_y_3,dest_y_4,dest_y_5} <= {32'b0,32'b0,32'b0,32'b0,32'b0};
+            
+        end else if (enable) begin
+        
             req_1 <= request;
             req_2 <= req_1;
             req_3 <= req_2;
             req_4 <= req_3;
             req_5 <= req_4;
+            
+            dest_x_1 <= dest_x_in;
+            dest_x_2 <= dest_x_1;
+            dest_x_3 <= dest_x_2;
+            dest_x_4 <= dest_x_3;
+            dest_x_5 <= dest_x_4;
+            
+            dest_y_1 <= dest_y_in;
+            dest_y_2 <= dest_y_1;
+            dest_y_3 <= dest_y_2;
+            dest_y_4 <= dest_y_3;
+            dest_y_5 <= dest_y_4;
+            
         end
     end
 
@@ -183,6 +283,10 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
                           .P(ax),
                           .A(a),  // GET INDEXING RIGHT!!
                           .B(x),
+                          .dest_x_in(),
+                          .dest_y_in(),
+                          .dest_x_out(),
+                          .dest_y_out(),
                           .request(1'b1),
                           .done(done_ax)); // GET INDEXING RIGHT!!
 
@@ -191,6 +295,10 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
                           .P(by),
                           .A(b),
                           .B(y),
+                          .dest_x_in(),
+                          .dest_y_in(),
+                          .dest_x_out(),
+                          .dest_y_out(),
                           .request(1'b1),
                           .done(done_by));
 
@@ -199,6 +307,10 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
                           .P(dx),
                           .A(d),
                           .B(x),
+                          .dest_x_in(),
+                          .dest_y_in(),
+                          .dest_x_out(),
+                          .dest_y_out(),
                           .request(1'b1),
                           .done(done_dx));
 
@@ -207,6 +319,10 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
                           .P(ey),
                           .A(e),
                           .B(y),
+                          .dest_x_in(),
+                          .dest_y_in(),
+                          .dest_x_out(),
+                          .dest_y_out(),
                           .request(1'b1),
                           .done(done_ey));
 
@@ -215,6 +331,10 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
                           .P(gx),
                           .A(g),
                           .B(x),
+                          .dest_x_in(),
+                          .dest_y_in(),
+                          .dest_x_out(),
+                          .dest_y_out(),
                           .request(1'b1),
                           .done(done_gx));
 
@@ -223,6 +343,10 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
                           .P(hy),
                           .A(h),
                           .B(y),
+                          .dest_x_in(),
+                          .dest_y_in(),
+                          .dest_x_out(),
+                          .dest_y_out(),
                           .request(1'b1),
                           .done(done_hy));
 
@@ -240,17 +364,27 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
 
     Divider_Handler dh0(.input_A(xw[31:0]), // TODO: confirm this
                         .input_B(w[31:0]),
+                        .dest_x_in(),
+                        .dest_y_in(),
                         .out(x_norm),
                         .request(1'b1), // TODO: fix this
                         .done(x_div_done),
+                        .dest_x_out(),
+                        .dest_y_out(),
+                        .ready_in(),
                         .clock(clock),
                         .reset(reset));
 
     Divider_Handler dh1(.input_A(yw[31:0]),
                         .input_B(w[31:0]),
+                        .dest_x_in(),
+                        .dest_y_in(),
                         .out(y_norm),
                         .request(1'b1), // TODO: fix this
                         .done(y_div_done),
+                        .dest_x_out(),
+                        .dest_y_out(),
+                        .ready_in(),
                         .clock(clock),
                         .reset(reset));    
 
