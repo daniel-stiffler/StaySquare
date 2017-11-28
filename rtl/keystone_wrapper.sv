@@ -1,34 +1,39 @@
+`define TODO1 100
+`define TODO2 2
+`define TODO3 3
+`define TODO4 4
+
 module Keystone
     //////////////////////////
     // AXI STREAM BEFORE IP //
     //////////////////////////
-   (input logic [63:0] s_axis_video_tdata_in,
-    input logic        s_axis_video_tvalid_in,
+   (input wire  [63:0] s_axis_video_tdata_in,
+    input wire         s_axis_video_tvalid_in,
    output logic        s_axis_video_tready_out,
-    input logic        s_axis_video_tuser_in,
-    input logic        s_axis_video_tlast_in,
+    input wire         s_axis_video_tuser_in,
+    input wire         s_axis_video_tlast_in,
     /////////////////////////
     // AXI STREAM AFTER IP //
     /////////////////////////
    output logic [63:0] s_axis_video_tdata_out,
    output logic        s_axis_video_tvalid_out,
-    input logic        s_axis_video_tready_in,
+    input wire         s_axis_video_tready_in,
    output logic        s_axis_video_tuser_out,
    output logic        s_axis_video_tlast_out,
     ///////////////////////
     // AXI STREAM TIMING //
     ///////////////////////
-    input logic         aclk, aclken, aresetn,
+    input wire         aclk, aclken, aresetn,
     //////////////
     // AXI LITE //
     //////////////
-    input logic [TODO1:0] AXI4_Lite
+    input wire [`TODO1:0] AXI4_Lite
     );
 
     logic sw_en, sw_rst;
 
-    assign sw_en = AXI4_Lite[TODO2];
-    assign sw_rst = AXI4_Lite[TODO3];
+    assign sw_en = AXI4_Lite[`TODO2];
+    assign sw_rst = AXI4_Lite[`TODO3];
 
     Keystone_Correction ip(.pixel_stream_out(s_axis_video_tdata_out),
                            .valid_out(s_axis_video_tvalid_out), 
@@ -44,6 +49,6 @@ module Keystone
                            .clock(aclk),
                            .clock_en(aclken & sw_en),
                            .reset(~aresetn | sw_rst),
-                           .m_map_registers(AXI4_Lite[TODO4]));
+                           .m_map_registers()); // TODO: connect
 
 endmodule: Keystone

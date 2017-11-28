@@ -19,10 +19,10 @@
 //////////////////////////////////////////////////////
 module Counter #(parameter SIZE = 32)
   (output logic [SIZE-1:0] value,
-    input logic reset, clock,
-    input logic clear, incr);
+    input wire reset, clock,
+    input wire clear, incr);
 
-    always_ff @(posedge clock or posedge reset)
+    always_ff @(posedge clock or posedge reset) begin
              if( reset == 1'b1 ) value <= '0;
         else if( clear & ~incr ) value <= '0;
         else if(~clear &  incr ) value <= value + 1;
@@ -41,8 +41,8 @@ endmodule: Counter
 //                                                  //
 //////////////////////////////////////////////////////
 module Round_to_Coords 
-  (output int          result,
-    input logic [63:0] value);
+  (output int         result,
+    input wire [47:0] value);
 
     // logic [19:0] truncated; // 43 bits - 23 bits
     
@@ -71,27 +71,37 @@ endmodule: Round_to_Coords
 //                                                     //
 /////////////////////////////////////////////////////////
 module Divider_Handler
-    (input logic [31:0] input_A, input_B,
+    (input wire [31:0] input_A, input_B,
     output logic [47:0] out,
-     input logic request, clock, reset,
+     input wire request, clock, reset,
     output logic done);
 
-    int cycle;
-
-    // TODO: a lot of arrays here
+    int          cycle;
+    logic        b_valid[0:`NUM_DIVS - 1];
+    logic        b_ready[0:`NUM_DIVS - 1];
+    logic [31:0] b_data[0:`NUM_DIVS - 1];
+    logic        a_valid[0:`NUM_DIVS - 1];
+    logic        a_ready[0:`NUM_DIVS - 1];
+    logic [31:0] a_data[0:`NUM_DIVS - 1];
+    logic        out_valid[0:`NUM_DIVS - 1];
+    logic [47:0] out_data[0:`NUM_DIVS - 1];
+    
+    // TODO: Lots of divider handling logic needed here
 
     generate
         genvar k;
         for (k = 0; k < `NUM_DIVS; k = k + 1) begin : divs
-            base_mb_div_gen_0_0 d(.aclk(clock),
-                          .s_axis_divisor_tvalid(b_valid[k]),
-                          .s_axis_divisor_tready(b_ready[k]),
-                          .s_axis_divisor_tdata(b_data[k]),
-                          .s_axis_dividend_tvalid(a_valid[k]),
-                          .s_axis_dividend_tready(a_ready[k]),
-                          .s_axis_dividend_tdata(a_data[k]),
-                          .m_axis_dout_tvalid(out_valid[k]),
-                          .m_axis_dout_tdata(out_data[k]));
+            div_gen_0 d(.aclk(clock),
+                        .aclken(1'b1),
+                        .aresetn(1'b0),
+                        .s_axis_divisor_tvalid(b_valid[k]),
+                        .s_axis_divisor_tready(b_ready[k]),
+                        .s_axis_divisor_tdata(b_data[k]),
+                        .s_axis_dividend_tvalid(a_valid[k]),
+                        .s_axis_dividend_tready(a_ready[k]),
+                        .s_axis_dividend_tdata(a_data[k]),
+                        .m_axis_dout_tvalid(out_valid[k]),
+                        .m_axis_dout_tdata(out_data[k]));
         end // divs
     endgenerate
 
@@ -113,16 +123,16 @@ endmodule: Divider_Handler
 //                                                      //
 //////////////////////////////////////////////////////////
 module Multiplier_Handler
-    (input logic clock, reset, 
+    (input wire clock, reset, 
     output logic [63:0] P, 
-     input logic [31:0] A, B, 
-     input logic request, 
+     input wire [31:0] A, B, 
+     input wire request, 
     output logic done);
 
     logic req_1, req_2, req_3;
     logic req_4, req_5;
 
-    base_mb_mult_gen_0_0 m(.CLK(clock), .*);
+    mult_gen_0 m(.CLK(clock), .CE(1'b1), .*);
 
     assign done = req_5;
 
@@ -152,14 +162,14 @@ endmodule: Multiplier_Handler
 ///////////////////////////////////////////////////////////////
 module Coordinate_Calculator // TODO NOTE: This might need further pipelining
   (output int x_result, y_result,
-    input logic clock, reset,
+    input wire clock, reset,
     input int x, y,
     input int a, b, c, d, e, f, g, h);
 
     logic [63:0] ax, by, dx, ey, gx, hy;
     logic [63:0] xw, yw, w;
-    logic [63:0] x_norm, y_norm;
-    logic [63:0] x_adjust, y_adjust;
+    logic [47:0] x_norm, y_norm;
+    logic [47:0] x_adjust, y_adjust;
     logic        x_div_done, y_div_done;
     logic        done_ax, done_by, done_dx;
     logic        done_ey, done_gx, done_hy;
@@ -228,16 +238,16 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
     // DIVIDERS FOR HOMOGENOUS NORMALIZATION //
     ///////////////////////////////////////////
 
-    Divider_Handler dh0(.input_A(xw),
-                        .input_B(w),
+    Divider_Handler dh0(.input_A(xw[31:0]), // TODO: confirm this
+                        .input_B(w[31:0]),
                         .out(x_norm),
                         .request(1'b1), // TODO: fix this
                         .done(x_div_done),
                         .clock(clock),
                         .reset(reset));
 
-    Divider_Handler dh1(.input_A(yw),
-                        .input_B(w),
+    Divider_Handler dh1(.input_A(yw[31:0]),
+                        .input_B(w[31:0]),
                         .out(y_norm),
                         .request(1'b1), // TODO: fix this
                         .done(y_div_done),
@@ -269,12 +279,12 @@ module Transformation_Datapath
    output logic [7:0] red, green, blue,
    output int         x_lookup, y_lookup,
    output logic       ready,
-    input logic       valid,
+    input wire       valid,
     input int         x, y,
     input int         a, b, c, d, e, f, g, h,
-    input logic [7:0] r_source, g_source, b_source,
-    input logic       valid_coords,
-    input logic       clock, reset);
+    input wire [7:0] r_source, g_source, b_source,
+    input wire       valid_coords,
+    input wire       clock, reset);
 
     //////////////////////////////////
     // PASS THROUGH FOR COORDINATES //
@@ -290,7 +300,7 @@ module Transformation_Datapath
     // CALCULATE COORDINATES FOR COLOR LOOKUP //
     ////////////////////////////////////////////
 
-    Coordinate_calculator c0(.x_result(x_lookup),
+    Coordinate_Calculator c0(.x_result(x_lookup),
                              .y_result(y_lookup),
                              .*); // x,y,a,b,c,d,e,f,g,h,clock
 
@@ -312,9 +322,9 @@ module Input_BRAM_Controller
    output logic       valid_coords, done,
     input int         x_write, y_write,
     input int         x_read,  y_read,
-    input logic [7:0] r_in, g_in, b_in,
-    input logic       write_request, read_request,
-    input logic       reset, clock, done_dest_frame);
+    input wire  [7:0] r_in, g_in, b_in,
+    input wire        write_request, read_request,
+    input wire        reset, clock, done_dest_frame);
 
     //////////////////////////////////
     // CHECK FOR VALID READ REQUEST //
@@ -338,7 +348,8 @@ module Input_BRAM_Controller
     logic [$clog2(`BRAM_ROWS)-1:0] bram_row_write, bram_row_read;
     logic                    [9:0] pos_bram_write, pos_bram_read;
     logic                          bram_col_write, bram_col_read;
-    logic [31:0] write_value, read_value;
+    wire  [31:0] write_value;
+    logic [31:0] read_value;
 
     logic [7:0] pass_count_read;
     logic [7:0] pass_count_write;
@@ -376,15 +387,43 @@ module Input_BRAM_Controller
     // BRAM VALUES //
     /////////////////
 
+    int row, col;
+    
     assign write_value = {pass_count_write, r_in, g_in, b_in};
-    assign data_in[bram_row_write][bram_col_write] = write_value;
-    assign write_addr[bram_row_write][bram_col_write] = {22'b0,pos_bram_write};
-    assign write_en[bram_row_write][bram_col_write] = write_request;
+    
+    always_comb begin
+    
+        read_value = '0;
+    
+        for (row = 0; row < `BRAM_ROWS; row = row + 1) begin
+            for (col = 0; col < 2; col = col + 1) begin
+            
+                if(row == bram_row_write && col == bram_col_write) begin
+                
+                    data_in[row][col] = write_value;
+                    write_addr[row][col] = {22'b0,pos_bram_write};
+                    write_en[row][col] = write_request;
+                    read_addr[row][col] = {22'b0,pos_bram_read};
+                    read_en[row][col] = read_request;
+                    
+                    read_value = data_out[row][col];
+                    
+                end else begin
+                
+                    data_in[row][col] = '0;
+                    write_addr[row][col] = '0;
+                    write_en[row][col] = 1'b0;
+                    read_addr[row][col] = '0;
+                    read_en[row][col] = 1'b0;
+                    
+                end
+            end
+        end
+        
+        pass_count_reported = read_value[31:24];
+        
+    end
 
-    assign read_value = data_out[bram_row_read][bram_col_read];
-    assign pass_count_reported = read_value[31:24];
-    assign read_addr[bram_row_read][bram_col_read] = {22'b0,pos_bram_read};
-    assign read_en[bram_row_read][bram_col_read] = read_request;
 
     always_comb begin
         if(pass_count_reported == pass_count_read) begin
@@ -409,9 +448,9 @@ module Input_BRAM_Controller
         genvar i;
         genvar j;
         for (i = 0; i < `BRAM_ROWS; i = i + 1) begin : rows_of_bram
-            for (j = 0; j < 2; j = j + 1) begin cols_of_bram
+            for (j = 0; j < 2; j = j + 1) begin : cols_of_bram
 
-                bram BRAM_1024x32_Header(.DO(data_out[i][j]), 
+                BRAM_1024x32_Header bram(.DO(data_out[i][j]), 
                                          .DI(data_in[i][j]),
                                          .RDADDR(read_addr[i][j]), 
                                          .RDCLK(clock), 
@@ -450,14 +489,14 @@ module Keystone_Correction
 //////////////////////
 // INPUT AXI STREAM //
 //////////////////////
-    input logic [63:0] pixel_stream_in,
-    input logic        valid_in, ready_in,
-    input logic        start_of_frame_in, end_of_line_in,
+    input wire [63:0] pixel_stream_in,
+    input wire        valid_in, ready_in,
+    input wire        start_of_frame_in, end_of_line_in,
 ////////////////////
 // INPUT AXI LITE //
 ////////////////////
-    input logic clock, clock_en, reset,
-    input logic [31:0] m_map_registers[7:0]); // H Matrix
+    input wire clock, clock_en, reset,
+    input wire [31:0] m_map_registers[7:0]); // H Matrix
 
     //////////////////////
     // INTERNAL SIGNALS //
@@ -469,6 +508,7 @@ module Keystone_Correction
     logic [7:0] r_calc, g_calc, b_calc;
     logic valid_coords, read_done;
     logic last_col_done, last_row_done;
+    logic done_dest_frame;
     int   current_x_input, current_y_input; // TODO NOTE: drive these
     int   x_lookup, y_lookup;
     int   current_x_calc, current_y_calc;
@@ -482,9 +522,9 @@ module Keystone_Correction
     assign b_in = pixel_stream_in[19:12];
     assign r_in = pixel_stream_in[29:22];
 
-    assign output_pixel_packet[9:2]   = green;
-    assign output_pixel_packet[19:12] = blue;
-    assign output_pixel_packet[29:22] = red;    
+    assign output_pixel_packet[9:2]   = g_calc;
+    assign output_pixel_packet[19:12] = b_calc;
+    assign output_pixel_packet[29:22] = r_calc;    
 
     //////////////////////////////////
     // RAM HANDLER FOR INPUT BUFFER //
@@ -498,6 +538,7 @@ module Keystone_Correction
                             .x_write(current_x_input), .y_write(current_y_input),
                             .x_read(x_lookup), .y_read(y_lookup),
                             .r_in(r_in), .g_in(g_in), .b_in(b_in),
+                            .write_request(), .read_request(), //TODO: connect
                             .reset(reset), .clock(clock), 
                             .done_dest_frame(done_dest_frame));
 
@@ -529,20 +570,32 @@ module Keystone_Correction
     // CONTROLLER //
     ////////////////
 
-    assign last_col_done = ((read_done==1'b1) && (current_x_calc==`WIDTH));
-    assign last_row_done = ((read_done==1'b1) && (current_y_calc==`HEIGHT));
+    assign last_col_done = ((read_done==1'b1) && (current_x_calc==`WIDTH-1));
+    assign last_row_done = ((read_done==1'b1) && (current_y_calc==`HEIGHT-1));
 
-    Counter #(32) p(.value(current_x_calc),
-                    .reset(reset),
-                    .clock(clock),
-                    .clear(last_col_done),
-                    .incr(read_done));
+    Counter #(32) xc(.value(current_x_calc),
+                     .reset(reset),
+                     .clock(clock),
+                     .clear(last_col_done),
+                     .incr(read_done));
 
-    Counter #(32) c(.value(current_y_calc),
-                    .reset(reset),
-                    .clock(clock),
-                    .clear(last_row_done),
-                    .incr(last_col_done));
+    Counter #(32) yc(.value(current_y_calc),
+                     .reset(reset),
+                     .clock(clock),
+                     .clear(last_row_done),
+                     .incr(last_col_done));
+                    
+    Counter #(32) xi(.value(current_x_input),
+                     .reset(reset),
+                     .clock(clock),
+                     .clear(current_x_input == `WIDTH -1 && valid_in == 1'b1),
+                     .incr(valid_in));
+                
+    Counter #(32) yi(.value(current_y_input),
+                     .reset(reset),
+                     .clock(clock),
+                     .clear(end_of_line_in),
+                     .incr(current_x_input == `WIDTH -1 && valid_in == 1'b1));
 
     /////////////
     // H LATCH //

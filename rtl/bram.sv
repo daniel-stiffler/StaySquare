@@ -26,15 +26,11 @@
 ////////////////////////////////////////////////////
 
 module BRAM_1024x32_Header(
-    DO, DI,
-    RDADDR, RDCLK, RDEN, 
-    RST,
-    WRADDR, WRCLK, WREN);
-
-    input  logic [31:0] DI;
-    output logic [31:0] DO;
-    input  logic  [9:0] RDADDR, WRADDR;
-    input  logic RDCLK, WRCLK, RST;
+    input  wire [31:0] DI,
+    output logic [31:0] DO,
+    input  wire  [9:0] RDADDR, WRADDR,
+    input  wire RDCLK, WRCLK, RST,
+    input  wire RDEN, WREN);
 
 
     ////////////////
@@ -245,4 +241,4 @@ module BRAM_1024x32_Header(
     );
     // End of BRAM_SDP_MACRO_inst instantiation
 
-endmodule // BRAM_1024x32_Header
+endmodule: BRAM_1024x32_Header
