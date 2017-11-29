@@ -9,6 +9,12 @@
 `define WIDTH 1920
 `define HEIGHT 1080
 
+typedef struct{
+    logic valid;
+    int x;
+    int y;
+} packet;
+
 //////////////////////////////////////////////////////
 //                                                  //
 // Counter module increments a stored 32-bit value. //
@@ -413,7 +419,7 @@ module Transformation_Datapath
    output logic [7:0] red, green, blue,
    output int         x_lookup, y_lookup,
    output logic       ready,
-    input wire       valid,
+    input packet      dest_pixel,
     input int         x, y,
     input int         a, b, c, d, e, f, g, h,
     input wire [7:0] r_source, g_source, b_source,
@@ -680,13 +686,28 @@ module Keystone_Correction
     // DATAPATHS FOR COLOR CALCULATION //
     /////////////////////////////////////
 
+    packet datapath_request;
+    logic calculating;
+
+    always_ff @(posedge clock) begin
+        if(reset) begin
+            calculating <= valid_in;
+        end else if(done_dest_frame) begin
+            calculating <= 1'b0;
+        end else if()
+    end
+
+    assign datapath_request.x = current_x_calc;
+    assign datapath_request.y = current_y_calc;
+    assign datapath_request.valid = calculating;
+
     Transformation_Datapath d0(.x_location(done_pix_loc_x),
                                .y_location(done_pix_loc_y),
                                .red(r_calc), .green(g_calc), .blue(b_calc),
                                .x_lookup(x_lookup), 
                                .y_lookup(y_lookup),
                                .ready(ready_out),
-                               .valid(valid_in),
+                               .dest_pixel(datapath_request),
                                .x(current_x_calc),
                                .y(current_y_calc),
                                .a(), .b(), 
