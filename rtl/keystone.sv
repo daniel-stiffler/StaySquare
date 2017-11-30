@@ -8,6 +8,8 @@
 `define NUM_DIVS 31
 `define WIDTH 1920
 `define HEIGHT 1080
+`define FIXED_POINT 16
+`define INT_SIZE 32
 
 typedef struct{
     logic valid;
@@ -50,18 +52,32 @@ module Round_to_Coords
   (output int         result,
     input wire [47:0] value);
 
-    // logic [19:0] truncated; // 43 bits - 23 bits
+    /////////////////////////////
+    // ROUND UP DIVIDER RESULT //
+    /////////////////////////////
+
+    logic [15:0] fractional_remainder;
+    int div_res;
+    int round_up_div_res;
+    int rounded_div_res;
+
+    assign fractional_remainder = value[15:0];
+    assign div_res = value[47:16];
+    assign round_up_div_res = fractional_remainder[15];
+    assign rounded_div_res = div_res + round_up_div_res;
+
+    ////////////////////////////////////////////////
+    // GRAB AND ROUND INTEGER HALF OF FIXED POINT //
+    ////////////////////////////////////////////////
+
+    logic [FIXED_POINT-1:0] dropped;
+    int upper;
+    int round_up_upper;
     
-    // int truncated_int;
-    // int round_up_int;
-
-    // assign truncated     = value[42:23];
-    // assign truncated_int = {{12{truncated[19] ,truncated}}};
-    // assign round_up_int  = value[FXD_PNT-1];
-
-    // assign result = truncated_int + round_up_int;
-
-    // TODO: Rewrite this based on FIXED POINT LOCATION
+    assign dropped = rounded_div_res[15:0];
+    assign upper = {{16{rounded_div_res[31]}}, rounded_div_res[31:16]};
+    assign round_up_upper = dropped[15];
+    assign result = upper + round_up_upper;
 
 endmodule: Round_to_Coords
 
@@ -266,7 +282,7 @@ endmodule: Multiplier_Handler
 //  - Rounds and formats results for easy integer lookup.    //
 //                                                           //
 ///////////////////////////////////////////////////////////////
-module Coordinate_Calculator // TODO NOTE: This might need further pipelining
+module Coordinate_Calculator
   (output int x_result, y_result,
     input wire clock, reset,
     input int x, y,
@@ -275,7 +291,7 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
     logic [63:0] ax, by, dx, ey, gx, hy;
     logic [63:0] xw, yw, w;
     logic [47:0] x_norm, y_norm;
-    logic [47:0] x_adjust, y_adjust;
+    int          x_round, y_round;
     logic        x_div_done, y_div_done;
     logic        done_ax, done_by, done_dx;
     logic        done_ey, done_gx, done_hy;
@@ -287,14 +303,14 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
     Multiplier_Handler m0(.clock(clock),
                           .reset(reset),
                           .P(ax),
-                          .A(a),  // GET INDEXING RIGHT!!
+                          .A(a),
                           .B(x),
                           .dest_x_in(),
                           .dest_y_in(),
                           .dest_x_out(),
                           .dest_y_out(),
                           .request(1'b1),
-                          .done(done_ax)); // GET INDEXING RIGHT!!
+                          .done(done_ax));
 
     Multiplier_Handler m1(.clock(clock),
                           .reset(reset),
@@ -368,8 +384,8 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
     // DIVIDERS FOR HOMOGENOUS NORMALIZATION //
     ///////////////////////////////////////////
 
-    Divider_Handler dh0(.input_A(xw[31:0]), // TODO: confirm this
-                        .input_B(w[31:0]),
+    Divider_Handler dh0(.input_A(xw[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
+                        .input_B(w[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
                         .dest_x_in(),
                         .dest_y_in(),
                         .out(x_norm),
@@ -381,8 +397,8 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
                         .clock(clock),
                         .reset(reset));
 
-    Divider_Handler dh1(.input_A(yw[31:0]),
-                        .input_B(w[31:0]),
+    Divider_Handler dh1(.input_A(yw[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
+                        .input_B(w[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
                         .dest_x_in(),
                         .dest_y_in(),
                         .out(y_norm),
@@ -394,23 +410,23 @@ module Coordinate_Calculator // TODO NOTE: This might need further pipelining
                         .clock(clock),
                         .reset(reset));    
 
+    ///////////////////////////////////////////
+    // ROUNDERS TO CONVERT TO INT FOR LOOKUP //
+    ///////////////////////////////////////////
+
+    Round_to_Coords r0(.result(x_norm),
+                       .value(x_round));
+
+    Round_to_Coords r1(.result(y_norm),
+                       .value(y_round));
+
     //////////////////////////////////////
     // ADDERS FOR COORDINATE ADJUSTMENT //
     //////////////////////////////////////
 
     // Division evaluated at compile-time
-    assign x_adjust = x_norm +  `WIDTH / 2;
-    assign y_adjust = y_norm + `HEIGHT / 2;
-
-    ///////////////////////////////////////////
-    // ROUNDERS TO CONVERT TO INT FOR LOOKUP //
-    ///////////////////////////////////////////
-
-    Round_to_Coords r0(.result(x_result),
-                       .value(x_adjust));
-
-    Round_to_Coords r1(.result(y_result),
-                       .value(y_adjust));
+    assign x_result = x_round +  `WIDTH / 2;
+    assign y_result = y_round + `HEIGHT / 2;
 
 endmodule: Coordinate_Calculator
 
@@ -649,7 +665,7 @@ module Keystone_Correction
     logic valid_coords, read_done;
     logic last_col_done, last_row_done;
     logic done_dest_frame;
-    int   current_x_input, current_y_input; // TODO NOTE: drive these
+    int   current_x_input, current_y_input;
     int   x_lookup, y_lookup;
     int   current_x_calc, current_y_calc;
     int   done_pix_loc_x, done_pix_loc_y;
@@ -743,7 +759,7 @@ module Keystone_Correction
     Counter #(32) xi(.value(current_x_input),
                      .reset(reset),
                      .clock(clock),
-                     .clear(current_x_input == `WIDTH -1 && valid_in == 1'b1),
+                     .clear(current_x_input == `WIDTH -1 && valid_in == 1'b1), // TODO: verify these
                      .incr(valid_in));
                 
     Counter #(32) yi(.value(current_y_input),
