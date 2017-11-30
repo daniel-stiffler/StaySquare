@@ -94,11 +94,11 @@ endmodule: Round_to_Coords
 /////////////////////////////////////////////////////////
 module Divider_Handler
     (input wire [31:0] input_A, input_B,
-     input int dest_x_in, dest_y_in,
+     input packet dest_pixel_in,
      input wire  ready_in,
     output logic [47:0] out,
-    output int dest_x_out, dest_y_out,
-     input wire request, clock, reset, enable,
+    output packet dest_pixel_out,
+     input wire clock, reset, enable,
     output logic done);
 
     int          in_pointer, out_pointer;
@@ -113,8 +113,7 @@ module Divider_Handler
     logic [47:0] out_data[0:`NUM_DIVS - 1];
     
     logic [47:0]  out_data_reg[0:`NUM_DIVS - 1];
-    int          dest_x_in_reg[0:`NUM_DIVS - 1];
-    int          dest_y_in_reg[0:`NUM_DIVS - 1];
+    packet        dest_pixel_in_reg[0:`NUM_DIVS - 1];
     
     // TODO: Lots of divider handling logic needed here
 
@@ -144,9 +143,9 @@ module Divider_Handler
     always_ff @(posedge clock) begin
         if(reset)
             in_pointer <= 0;
-        else if(in_pointer == `NUM_DIVS-1 && request == 1'b1) 
+        else if(in_pointer == `NUM_DIVS-1 && dest_pixel_in.valid == 1'b1) 
             in_pointer <= 0;
-        else if(request)
+        else if(dest_pixel_in.valid)
             in_pointer <= in_pointer + 1;
     end
     
@@ -155,9 +154,9 @@ module Divider_Handler
         for(i = 0; i < `NUM_DIVS; i = i + 1) begin
             if(i == in_pointer) begin
                 a_data[i]  = input_A;
-                a_valid[i] = request;
+                a_valid[i] = dest_pixel_in.valid;
                 b_data[i]  = input_B;
-                b_valid[i] = request;
+                b_valid[i] = dest_pixel_in.valid;
             end else begin
                 a_data[i]  = '0;
                 a_valid[i] = 1'b0;
@@ -177,8 +176,7 @@ module Divider_Handler
     end
     
     assign        out =      out_data[out_pointer];
-    assign dest_x_out = dest_x_in_reg[out_pointer];
-    assign dest_y_out = dest_y_in_reg[out_pointer];
+    assign dest_pixel_out = dest_pixel_in_reg[out_pointer];
     
     ////////////////////////
     // DEST LOCATION REGS //
@@ -187,11 +185,9 @@ module Divider_Handler
     always_ff @(posedge clock) begin
         for(v = 0; v < `NUM_DIVS; v = v + 1) begin
             if(reset) begin
-                dest_x_in_reg[v] = '0;
-                dest_y_in_reg[v] = '0;
-            end else if(in_pointer == v && request == 1'b1 && enable == 1'b1) begin
-                dest_x_in_reg[v] <= dest_x_in;
-                dest_y_in_reg[v] <= dest_y_in;
+                dest_pixel_in_reg[v] = '0;
+            end else if(in_pointer == v && enable == 1'b1) begin
+                dest_pixel_in_reg[v] <= dest_pixel_in;
             end
         end
     end
@@ -223,30 +219,21 @@ endmodule: Divider_Handler
 module Multiplier_Handler
     (input wire clock, reset, enable,
     output logic [63:0] P, 
-     input wire [31:0] A, B, 
-     input int dest_x_in, dest_y_in,
-    output int dest_x_out, dest_y_out,
+     input wire [31:0] A, B,
      input wire request,
     output logic done);
 
     logic req_1, req_2, req_3, req_4, req_5;
-    
-    int dest_x_1, dest_x_2, dest_x_3, dest_x_4, dest_x_5;
-    int dest_y_1, dest_y_2, dest_y_3, dest_y_4, dest_y_5;
 
     mult_gen_0 m(.CLK(clock), .CE(enable), .*);
 
     assign done = req_5;
-    assign dest_x_out = dest_x_5;
-    assign dest_y_out = dest_y_5;
 
     // Delay request by 5 cycles to indicate end of 6 stage pipeline
     always_ff @(posedge clock) begin
         if(reset) begin
         
             {req_1,req_2,req_3,req_4,req_5} <= 5'b00000;
-            {dest_x_1,dest_x_2,dest_x_3,dest_x_4,dest_x_5} <= {32'b0,32'b0,32'b0,32'b0,32'b0};
-            {dest_y_1,dest_y_2,dest_y_3,dest_y_4,dest_y_5} <= {32'b0,32'b0,32'b0,32'b0,32'b0};
             
         end else if (enable) begin
         
@@ -256,18 +243,6 @@ module Multiplier_Handler
             req_4 <= req_3;
             req_5 <= req_4;
             
-            dest_x_1 <= dest_x_in;
-            dest_x_2 <= dest_x_1;
-            dest_x_3 <= dest_x_2;
-            dest_x_4 <= dest_x_3;
-            dest_x_5 <= dest_x_4;
-            
-            dest_y_1 <= dest_y_in;
-            dest_y_2 <= dest_y_1;
-            dest_y_3 <= dest_y_2;
-            dest_y_4 <= dest_y_3;
-            dest_y_5 <= dest_y_4;
-            
         end
     end
 
@@ -275,41 +250,56 @@ endmodule: Multiplier_Handler
 
 ///////////////////////////////////////////////////////////////
 //                                                           //
-// Coordinate Calculator Block Transforms x, y to x0, y0.    //
+// Transformation Datapath Transforms x, y to x0, y0.        //
 //                                                           //
 //  - Receives H matrix and coordinates as integers.         //
 //  - Assumes fixed-point representation of H matrix values. //
 //  - Rounds and formats results for easy integer lookup.    //
 //                                                           //
 ///////////////////////////////////////////////////////////////
-module Coordinate_Calculator
-  (output int x_result, y_result,
-    input wire clock, reset,
-    input int x, y,
-    input int a, b, c, d, e, f, g, h);
+module Transformation_Datapath
+  (output logic [7:0] red, green, blue,
+   output int         x_result, y_result,
+   output logic       ready,
+    input packet      dest_pixel_in,
+   output packet      dest_pixel_out,
+    input int         a, b, c, d, e, f, g, h,
+    input wire [7:0] r_source, g_source, b_source,
+    input wire       valid_coords,
+    input wire       clock, reset);
+
+    ////////////////////////////////////////////
+    // CALCULATE COORDINATES FOR COLOR LOOKUP //
+    ////////////////////////////////////////////
 
     logic [63:0] ax, by, dx, ey, gx, hy;
     logic [63:0] xw, yw, w;
     logic [47:0] x_norm, y_norm;
+    int          x, y;
     int          x_round, y_round;
     logic        x_div_done, y_div_done;
     logic        done_ax, done_by, done_dx;
     logic        done_ey, done_gx, done_hy;
 
+    packet dest_pixel_1, dest_pixel_2, dest_pixel_3;
+    packet dest_pixel_4, dest_pixel_5;
+    packet dest_pixel_from_mults;
+
+    assign x = dest_pixel_in.x;
+    assign y = dest_pixel_in.y;
+
     ////////////////////////////////////////////
     // MULTIPLIERS FOR VECTOR MATRIX MULTIPLY //
     ////////////////////////////////////////////
+
+    assign dest_pixel_from_mults = dest_pixel_5;
 
     Multiplier_Handler m0(.clock(clock),
                           .reset(reset),
                           .P(ax),
                           .A(a),
                           .B(x),
-                          .dest_x_in(),
-                          .dest_y_in(),
-                          .dest_x_out(),
-                          .dest_y_out(),
-                          .request(1'b1),
+                          .request(dest_pixel_in.valid),
                           .done(done_ax));
 
     Multiplier_Handler m1(.clock(clock),
@@ -317,11 +307,7 @@ module Coordinate_Calculator
                           .P(by),
                           .A(b),
                           .B(y),
-                          .dest_x_in(),
-                          .dest_y_in(),
-                          .dest_x_out(),
-                          .dest_y_out(),
-                          .request(1'b1),
+                          .request(dest_pixel_in.valid),
                           .done(done_by));
 
     Multiplier_Handler m2(.clock(clock),
@@ -329,11 +315,7 @@ module Coordinate_Calculator
                           .P(dx),
                           .A(d),
                           .B(x),
-                          .dest_x_in(),
-                          .dest_y_in(),
-                          .dest_x_out(),
-                          .dest_y_out(),
-                          .request(1'b1),
+                          .request(dest_pixel_in.valid),
                           .done(done_dx));
 
     Multiplier_Handler m3(.clock(clock),
@@ -341,11 +323,7 @@ module Coordinate_Calculator
                           .P(ey),
                           .A(e),
                           .B(y),
-                          .dest_x_in(),
-                          .dest_y_in(),
-                          .dest_x_out(),
-                          .dest_y_out(),
-                          .request(1'b1),
+                          .request(dest_pixel_in.valid),
                           .done(done_ey));
 
     Multiplier_Handler m4(.clock(clock),
@@ -353,11 +331,7 @@ module Coordinate_Calculator
                           .P(gx),
                           .A(g),
                           .B(x),
-                          .dest_x_in(),
-                          .dest_y_in(),
-                          .dest_x_out(),
-                          .dest_y_out(),
-                          .request(1'b1),
+                          .request(dest_pixel_in.valid),
                           .done(done_gx));
 
     Multiplier_Handler m5(.clock(clock),
@@ -365,12 +339,24 @@ module Coordinate_Calculator
                           .P(hy),
                           .A(h),
                           .B(y),
-                          .dest_x_in(),
-                          .dest_y_in(),
-                          .dest_x_out(),
-                          .dest_y_out(),
-                          .request(1'b1),
+                          .request(dest_pixel_in.valid),
                           .done(done_hy));
+
+    always_ff @(posedge clock) begin
+        if(reset) begin
+            dest_pixel_1 <= '0;
+            dest_pixel_2 <= '0;
+            dest_pixel_3 <= '0;
+            dest_pixel_4 <= '0;
+            dest_pixel_5 <= '0;
+        end else begin
+            dest_pixel_1 <= dest_pixel_in;
+            dest_pixel_2 <= dest_pixel_1;
+            dest_pixel_3 <= dest_pixel_2;
+            dest_pixel_4 <= dest_pixel_3;
+            dest_pixel_5 <= dest_pixel_4;
+        end
+    end
 
     ///////////////////////////////////////
     // ADDERS FOR VECTOR MATRIX MULTIPLY //
@@ -386,26 +372,20 @@ module Coordinate_Calculator
 
     Divider_Handler dh0(.input_A(xw[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
                         .input_B(w[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
-                        .dest_x_in(),
-                        .dest_y_in(),
+                        .dest_pixel_in(dest_pixel_from_mults),
                         .out(x_norm),
-                        .request(1'b1), // TODO: fix this
                         .done(x_div_done),
-                        .dest_x_out(),
-                        .dest_y_out(),
+                        .dest_pixel_out(dest_pixel_out),
                         .ready_in(),
                         .clock(clock),
                         .reset(reset));
 
     Divider_Handler dh1(.input_A(yw[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
                         .input_B(w[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
-                        .dest_x_in(),
-                        .dest_y_in(),
+                        .dest_pixel_in(dest_pixel_from_mults),
                         .out(y_norm),
-                        .request(1'b1), // TODO: fix this
                         .done(y_div_done),
-                        .dest_x_out(),
-                        .dest_y_out(),
+                        .dest_pixel_out(dest_pixel_out),
                         .ready_in(),
                         .clock(clock),
                         .reset(reset));    
@@ -424,41 +404,8 @@ module Coordinate_Calculator
     // ADDERS FOR COORDINATE ADJUSTMENT //
     //////////////////////////////////////
 
-    // Division evaluated at compile-time
     assign x_result = x_round +  `WIDTH / 2;
     assign y_result = y_round + `HEIGHT / 2;
-
-endmodule: Coordinate_Calculator
-
-module Transformation_Datapath
-  (output int         x_location, y_location,
-   output logic [7:0] red, green, blue,
-   output int         x_lookup, y_lookup,
-   output logic       ready,
-    input packet      dest_pixel,
-    input int         x, y,
-    input int         a, b, c, d, e, f, g, h,
-    input wire [7:0] r_source, g_source, b_source,
-    input wire       valid_coords,
-    input wire       clock, reset);
-
-    //////////////////////////////////
-    // PASS THROUGH FOR COORDINATES //
-    //////////////////////////////////
-
-    // Datapath will find color for location by calculating a source location,
-    // but that color will be displayed at the originally provided location!
-    // As such, pass this value through.
-    assign x_location = x;
-    assign y_location = y; // TODO: Fix this. Pipeline the location with pixel
-
-    ////////////////////////////////////////////
-    // CALCULATE COORDINATES FOR COLOR LOOKUP //
-    ////////////////////////////////////////////
-
-    Coordinate_Calculator c0(.x_result(x_lookup),
-                             .y_result(y_lookup),
-                             .*); // x,y,a,b,c,d,e,f,g,h,clock
 
     //////////////////////////////////////////////
     // MULTIPLEXOR TO SELECT OUTPUT COLOR VALUE //
@@ -660,7 +607,7 @@ module Keystone_Correction
 
     logic [63:0] output_pixel_packet;
     logic [7:0] r_in,  g_in,  b_in;
-    logic [7:0] r_out, g_out, b_out;
+    logic [7:0] r_out_from_bram, g_out_from_bram, b_out_from_bram;
     logic [7:0] r_calc, g_calc, b_calc;
     logic valid_coords, read_done;
     logic last_col_done, last_row_done;
@@ -669,6 +616,9 @@ module Keystone_Correction
     int   x_lookup, y_lookup;
     int   current_x_calc, current_y_calc;
     int   done_pix_loc_x, done_pix_loc_y;
+
+    packet datapath_request, datapath_answer;
+    logic calculating;
 
     /////////////////////////////////////
     // PARSE PIXEL COLOR DATA FROM BUS //
@@ -686,53 +636,58 @@ module Keystone_Correction
     // RAM HANDLER FOR INPUT BUFFER //
     //////////////////////////////////
 
-    assign done_dest_frame = ( (current_x_calc ==  (`WIDTH-1)) &&
-                               (current_y_calc == (`HEIGHT-1)) );
+    assign done_dest_frame = ( (datapath_answer.x ==  (`WIDTH-1)) &&
+                               (datapath_answer.y == (`HEIGHT-1)) );
 
-    Input_BRAM_Controller c0(.r_out(), .g_out(), .b_out(),
-                            .valid_coords(valid_coords), .done(read_done),
-                            .x_write(current_x_input), .y_write(current_y_input),
-                            .x_read(x_lookup), .y_read(y_lookup),
-                            .r_in(r_in), .g_in(g_in), .b_in(b_in),
-                            .write_request(), .read_request(), //TODO: connect
-                            .reset(reset), .clock(clock), 
-                            .done_dest_frame(done_dest_frame));
+    Input_BRAM_Controller c0(.r_out(r_out_from_bram), 
+                             .g_out(g_out_from_bram), 
+                             .b_out(b_out_from_bram),
+                             .valid_coords(valid_coords), 
+                             .done(read_done),
+                             .x_write(current_x_input), 
+                             .y_write(current_y_input),
+                             .x_read(x_lookup), 
+                             .y_read(y_lookup),
+                             .r_in(r_in), 
+                             .g_in(g_in), 
+                             .b_in(b_in),
+                             .write_request(valid_in), 
+                             .read_request(datapath_answer.valid),
+                             .reset(reset), 
+                             .clock(clock), 
+                             .done_dest_frame(done_dest_frame));
 
     /////////////////////////////////////
     // DATAPATHS FOR COLOR CALCULATION //
     /////////////////////////////////////
-
-    packet datapath_request;
-    logic calculating;
 
     always_ff @(posedge clock) begin
         if(reset) begin
             calculating <= valid_in;
         end else if(done_dest_frame) begin
             calculating <= 1'b0;
-        end else if()
+        end else if(start_of_frame_in) begin
+            calculating <= 1'b1;
+        end
     end
 
     assign datapath_request.x = current_x_calc;
     assign datapath_request.y = current_y_calc;
     assign datapath_request.valid = calculating;
 
-    Transformation_Datapath d0(.x_location(done_pix_loc_x),
-                               .y_location(done_pix_loc_y),
-                               .red(r_calc), .green(g_calc), .blue(b_calc),
-                               .x_lookup(x_lookup), 
-                               .y_lookup(y_lookup),
+    Transformation_Datapath d0(.red(r_calc), .green(g_calc), .blue(b_calc),
+                               .x_result(x_lookup), 
+                               .y_result(y_lookup),
                                .ready(ready_out),
-                               .dest_pixel(datapath_request),
-                               .x(current_x_calc),
-                               .y(current_y_calc),
+                               .dest_pixel_in(datapath_request),
+                               .dest_pixel_out(datapath_answer),
                                .a(a), .b(b), 
                                .c(c), .d(d), 
                                .e(e), .f(f), 
                                .g(g), .h(h),
-                               .r_source(r_out),
-                               .g_source(g_out),
-                               .b_source(b_out),
+                               .r_source(r_out_from_bram),
+                               .g_source(g_out_from_bram),
+                               .b_source(b_out_from_bram),
                                .valid_coords(valid_coords),
                                .clock(clock),
                                .reset(reset));
@@ -781,4 +736,4 @@ module Keystone_Correction
     // TODO: put a queue here
     assign pixel_stream_out = output_pixel_packet;
 
-endmodule: Keystone_Correction 
+endmodule: Keystone_Correction
