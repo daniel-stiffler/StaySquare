@@ -1,7 +1,4 @@
-`define TODO1 100
-`define TODO2 2
-`define TODO3 3
-`define TODO4 4
+`define C_S_AXI_DATA_WIDTH 32
 
 module Keystone
     //////////////////////////
@@ -27,13 +24,17 @@ module Keystone
     //////////////
     // AXI LITE //
     //////////////
-    input wire [`TODO1:0] AXI4_Lite
+    input wire ENABLE_KEYSTONE,
+    input wire SW_RESET,
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H11,
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H12,
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H13,
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H21,
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H22,
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H23,
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H31,
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H32,
     );
-
-    logic sw_en, sw_rst;
-
-    assign sw_en = AXI4_Lite[`TODO2];
-    assign sw_rst = AXI4_Lite[`TODO3];
 
     Keystone_Correction ip(.pixel_stream_out(s_axis_video_tdata_out),
                            .valid_out(s_axis_video_tvalid_out), 
@@ -47,8 +48,15 @@ module Keystone
                            .start_of_frame_in(s_axis_video_tuser_in),
                            .end_of_line_in(s_axis_video_tlast_in),
                            .clock(aclk),
-                           .clock_en(aclken & sw_en),
-                           .reset(~aresetn | sw_rst),
-                           .m_map_registers()); // TODO: connect
+                           .clock_en(aclken & ENABLE_KEYSTONE),
+                           .reset(~aresetn | SW_RESET),
+                           .a(H11),
+                           .b(H12),
+                           .c(H13),
+                           .d(H21),
+                           .e(H22),
+                           .f(H23),
+                           .g(H31),
+                           .h(H32));
 
 endmodule: Keystone

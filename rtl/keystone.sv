@@ -652,7 +652,7 @@ module Keystone_Correction
 // INPUT AXI LITE //
 ////////////////////
     input wire clock, clock_en, reset,
-    input wire [31:0] m_map_registers[7:0]); // H Matrix
+    input wire [31:0] a,b,c,d,e,f,g,h); // H Matrix
 
     //////////////////////
     // INTERNAL SIGNALS //
@@ -726,10 +726,10 @@ module Keystone_Correction
                                .dest_pixel(datapath_request),
                                .x(current_x_calc),
                                .y(current_y_calc),
-                               .a(), .b(), 
-                               .c(), .d(), 
-                               .e(), .f(), 
-                               .g(), .h(),
+                               .a(a), .b(b), 
+                               .c(c), .d(d), 
+                               .e(e), .f(f), 
+                               .g(g), .h(h),
                                .r_source(r_out),
                                .g_source(g_out),
                                .b_source(b_out),
