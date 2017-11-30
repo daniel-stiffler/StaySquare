@@ -599,7 +599,7 @@ module Keystone_Correction
 // INPUT AXI LITE //
 ////////////////////
     input wire clock, clock_en, reset,
-    input wire [31:0] a,b,c,d,e,f,g,h); // H Matrix
+    input wire [31:0] H11,H12,H13,H21,H22,H23,H31,H32);
 
     //////////////////////
     // INTERNAL SIGNALS //
@@ -616,6 +616,8 @@ module Keystone_Correction
     int   x_lookup, y_lookup;
     int   current_x_calc, current_y_calc;
     int   done_pix_loc_x, done_pix_loc_y;
+
+    int a,b,c,d,e,f,g,h;
 
     packet datapath_request, datapath_answer;
     logic calculating;
@@ -727,7 +729,27 @@ module Keystone_Correction
     // H LATCH //
     /////////////
 
-    // TODO NOTE: Write this
+    always_ff @(posedge clock) begin
+        if(reset) begin
+            a <= 0;
+            b <= 0;
+            c <= 0;
+            d <= 0;
+            e <= 0;
+            f <= 0;
+            g <= 0;
+            h <= 0;
+        end else if(start_of_frame_in) begin
+            a <= H11;
+            b <= H12;
+            c <= H13;
+            d <= H21;
+            e <= H22;
+            f <= H23;
+            g <= H31;
+            h <= H32;
+        end
+    end
 
     //////////////////
     // OUTPUT QUEUE //
