@@ -41,7 +41,6 @@ module Keystone
                            .ready_out(s_axis_video_tready_out),
                            .start_of_frame_out(s_axis_video_tuser_out), 
                            .end_of_line_out(s_axis_video_tlast_out),
-                           .status_and_debug(), // TODO NOTE: get this hooked up
                            .pixel_stream_in(s_axis_video_tdata_in),
                            .valid_in(s_axis_video_tvalid_in), 
                            .ready_in(s_axis_video_tready_in),

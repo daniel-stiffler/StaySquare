@@ -370,6 +370,8 @@ module Transformation_Datapath
     // DIVIDERS FOR HOMOGENOUS NORMALIZATION //
     ///////////////////////////////////////////
 
+    // TODO: Ready in has to come from whatever makes bram requests
+
     Divider_Handler dh0(.input_A(xw[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
                         .input_B(w[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
                         .dest_pixel_in(dest_pixel_from_mults),
@@ -427,7 +429,7 @@ module Input_BRAM_Controller
     input int         x_read,  y_read,
     input wire  [7:0] r_in, g_in, b_in,
     input wire        write_request, read_request,
-    input wire        reset, clock, done_dest_frame);
+    input wire        reset, clock, done_dest_frame); // TODO: register the BRAM outputs...
 
     //////////////////////////////////
     // CHECK FOR VALID READ REQUEST //
@@ -527,6 +529,9 @@ module Input_BRAM_Controller
         
     end
 
+    //////////////////
+    // PIXEL VALUES //
+    //////////////////
 
     always_comb begin
         if(pass_count_reported == pass_count_read) begin
@@ -568,6 +573,56 @@ module Input_BRAM_Controller
 
 endmodule: Input_BRAM_Controller
 
+/////////////////////////////////////////////////
+//                                             //
+// Queue module for FIFO output buffering.     //
+//                                             //
+//   - Holds 32 packets of 64 bits each.       //
+//   - Combinational read, synchronous write.  //
+//                                             //
+/////////////////////////////////////////////////
+module Queue
+  (output logic [63:0] out,
+    input logic [63:0] in,
+    input logic put, get,
+    input logic clock, reset,
+   output logic empty, full);
+
+    logic [4:0] put_pointer, get_pointer;
+    logic [63:0] q[0:31];
+
+    assign out = q[get_pointer];
+    
+    assign empty =  (put_pointer      == get_pointer);
+    assign full  = ((put_pointer + 1) == get_pointer);
+
+    always_ff @(posedge clock) begin
+        if(reset) begin
+            put_pointer <= '0;
+            get_pointer <= '0;
+        end else if( get & ~put & ~empty) begin
+            get_pointer <= get_pointer + 1;
+        end else if(~get &  put & ~full) begin
+            put_pointer <= put_pointer + 1;
+        end else if( get &  put) begin
+            put_pointer <= put_pointer + 1;
+            get_pointer <= get_pointer + 1;
+        end
+    end
+
+    int i;
+    always_ff @(posedge clock) begin
+        for(i = 0; i < 32; i = i + 1) begin
+            if(reset) begin
+                q[i] <= '0;
+            end else if(i == put_pointer && put == 1'b1) begin
+                q[i] <= in;
+            end
+        end
+    end
+
+endmodule: Queue
+
 ////////////////////////////////////////////////////////////
 //                                                        //
 // Keystone Correction module determines new pixel colors //
@@ -585,10 +640,6 @@ module Keystone_Correction
   (output logic [63:0] pixel_stream_out,
    output logic        valid_out, ready_out,
    output logic        start_of_frame_out, end_of_line_out,
-/////////////////////
-// OUTPUT AXI LITE //
-/////////////////////
-   output logic  [7:0] status_and_debug, // TODO NOTE: DETERMINE WHAT THESE ARE
 //////////////////////
 // INPUT AXI STREAM //
 //////////////////////
@@ -620,7 +671,6 @@ module Keystone_Correction
     int a,b,c,d,e,f,g,h;
 
     packet datapath_request, datapath_answer;
-    logic calculating;
 
     /////////////////////////////////////
     // PARSE PIXEL COLOR DATA FROM BUS //
@@ -663,19 +713,9 @@ module Keystone_Correction
     // DATAPATHS FOR COLOR CALCULATION //
     /////////////////////////////////////
 
-    always_ff @(posedge clock) begin
-        if(reset) begin
-            calculating <= valid_in;
-        end else if(done_dest_frame) begin
-            calculating <= 1'b0;
-        end else if(start_of_frame_in) begin
-            calculating <= 1'b1;
-        end
-    end
-
     assign datapath_request.x = current_x_calc;
     assign datapath_request.y = current_y_calc;
-    assign datapath_request.valid = calculating;
+    assign datapath_request.valid = valid_in; // TODO: Can't be valid in! Has to be a counter
 
     Transformation_Datapath d0(.red(r_calc), .green(g_calc), .blue(b_calc),
                                .x_result(x_lookup), 
@@ -716,14 +756,14 @@ module Keystone_Correction
     Counter #(32) xi(.value(current_x_input),
                      .reset(reset),
                      .clock(clock),
-                     .clear(current_x_input == `WIDTH -1 && valid_in == 1'b1), // TODO: verify these
+                     .clear(end_of_line_in && valid_in == 1'b1), // TODO: verify these
                      .incr(valid_in));
                 
     Counter #(32) yi(.value(current_y_input),
                      .reset(reset),
                      .clock(clock),
-                     .clear(end_of_line_in),
-                     .incr(current_x_input == `WIDTH -1 && valid_in == 1'b1));
+                     .clear(end_of_line_in && valid_in && current_y_input == `HEIGHT-1),
+                     .incr(end_of_line_in && valid_in == 1'b1));
 
     /////////////
     // H LATCH //
@@ -755,7 +795,17 @@ module Keystone_Correction
     // OUTPUT QUEUE //
     //////////////////
 
-    // TODO: put a queue here
-    assign pixel_stream_out = output_pixel_packet;
+    logic queue_empty;
+
+    assign valid_out = ~queue_empty;
+
+    Queue q0(.out(pixel_stream_out),
+             .in(output_pixel_packet),
+             .put(datapath_answer.valid),
+             .get(ready_in),
+             .empty(queue_empty),
+             .full(), // TODO: connect this to the ready of whatever register is given to bram output?
+             .clock(clock),
+             .reset(reset));
 
 endmodule: Keystone_Correction
