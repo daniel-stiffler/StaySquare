@@ -1,0 +1,257 @@
+\documentclass[a4paper]{article}
+
+%%%%%%%%
+% FONT %
+%%%%%%%%
+
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+%%%%%%%%%%%%%%
+% PAGE SETUP %
+%%%%%%%%%%%%%%
+
+\usepackage[a4paper,top=3cm,bottom=2cm,left=2cm,right=2cm,marginparwidth=1.75cm]{geometry}
+
+%%%%%%%%%%%%
+% PACKAGES %
+%%%%%%%%%%%%
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{float}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black}
+
+%%%%%%%%%%%%%%%%%%%
+% ACTUAL DOCUMENT %
+%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%%%%%%%%%%%%%
+% TITLEPAGE %
+%%%%%%%%%%%%%
+
+\begin{titlepage}
+
+    \centering
+    \vspace*{3cm}
+    \noindent\rule{16cm}{0.4pt}\linebreak\linebreak\linebreak
+    \LARGE
+    \textbf{Real-time Frustum Normalization for Video Projection}
+
+    \vspace*{0.75cm}
+
+    \large 18-500 ECE Design Experience \linebreak 
+    Anthony Kuntz, Adam Pinson, \& Daniel Stiffler \linebreak\linebreak
+    "Stay Square" \linebreak\linebreak\linebreak
+    
+    \noindent\rule{16cm}{0.4pt}
+
+    \vspace*{\fill}
+    
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%
+% TABLE OF CONTENTS %
+%%%%%%%%%%%%%%%%%%%%%
+
+\tableofcontents
+\newpage
+    
+%%%%%%%%%%%%%%%%%
+% PAPER CONTENT %
+%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction} %
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Problem}
+In education, business, and collaboration, projected video is becoming increasingly more important as a means of conveniently sharing information. When consumer projectors are not properly leveled, however, the outputted image or video ends up distorted, rotated, or stretched. This unappealing consequence occurs when the cone of light, or frustum, emitted from the projector does not travel a uniform distance before meeting the screen. While current solutions to the distorted image output by a tilted projector, also known as the keystone effect, do exist, they are less than ideal. Many projectors include the ability to move, refocus, or adjust the lens to manually correct for the keystone effect. However, this mechanical solution varies from device to device, requires manual input, and cannot adapt to later changes in positioning without additional manual input. Software solutions, on the other hand, exist only in very inaccessible, high-end projectors. Most importantly, existing solutions are device-specific. As such, educators, businesspersons, and presenters who use various types of projectors in wide varieties of settings cannot count on a reliable, consistent solution. A mobile, dynamic, self-contained solution to the keystone effect, however, would guarantee that an individual’s presentation, movie, slides, or demonstration will remain viewer friendly regardless of the venue or setup used.
+\subsection{Scope}
+Lorem Ipsum
+\subsection{Requirements}
+Lorem Ipsum
+\subsection{Planned Schedule}
+hahahahahahaha
+\begin{figure}[H] 
+\centering
+\includegraphics{sched.png}
+\caption{\label{fig:sched}Proposed schedule for the semester.}
+\end{figure}
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Design Overview} %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Product Design}
+Lorem Ipsum
+\begin{figure}[H] 
+\centering
+\includegraphics{Product_Design.png}
+\caption{\label{fig:prod}Proposed system-level design of our product.}
+\end{figure}
+\subsection{System Design}
+Lorem Ipsum
+\subsection{Software Design}
+Lorem Ipsum
+\subsection{IP Design}
+Lorem Ipsum
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%
+\section{Progression} %
+%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Python Proof of Concept}
+Lorem Ipsum
+\begin{figure}[H] 
+\centering
+\includegraphics{transform.png}
+\caption{\label{fig:transform}Left: The original image. Right: The Python output.}
+\end{figure}
+\subsection{FPGA Hello World}
+Lorem Ipsum
+\subsection{AXI Stream Design}
+Lorem Ipsum
+\subsection{MicroBlaze Design}
+Lorem Ipsum
+\subsection{AXI Stream Redesign}
+Lorem Ipsum
+\subsection{AXI Stream Clocking}
+Lorem Ipsum
+\subsection{MicroBlaze Code}
+Lorem Ipsum
+\subsection{MicroBlaze Configuration}
+Lorem Ipsum
+\subsection{Debug Visibility}
+Lorem Ipsum
+\subsection{I2C Rework}
+Lorem Ipsum
+\subsection{RTL IP Implementation}
+Lorem Ipsum
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Final Project} %
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{End Result}
+Lorem Ipsum
+\subsection{What Remains}
+Lorem Ipsum
+\subsection{What We Wish We Had Known}
+Lorem Ipsum
+\subsection{What We Could Have Done Better}
+Lorem Ipsum
+\subsection{What We Learned}
+Lorem Ipsum
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%
+\section{Tool Chain} %
+%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Vivado}
+Fucking Sucks
+\subsection{Xilinx SDK}
+Good grief
+\subsection{Eclipse}
+Oh boy
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Individual Pages} %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Anthony}
+\subsubsection{What I Did}
+Lorem Ipsum
+\subsubsection{Takeaways}
+Lorem Ipsum
+\newpage
+
+\subsection{Adam}
+\subsubsection{What I Did}
+Lorem Ipsum
+\subsubsection{Takeaways}
+Lorem Ipsum
+\newpage
+
+\subsection{Daniel}
+\subsubsection{What I Did}
+Lorem Ipsum
+\subsubsection{Takeaways}
+Lorem Ipsum
+\newpage
+
+%%%%%%%%%%%%%%
+% REFERENCES %
+%%%%%%%%%%%%%%
+
+\section{References}
+\newpage
+
+%%%%%%%%%%%%%%%%%%
+% LaTeX Tutorial %
+%%%%%%%%%%%%%%%%%%
+
+\section{LaTeX Tutorial for reference while writing this}
+
+\subsection{How to include Figures}
+
+First you have to upload the image file from your computer using the upload link the project menu. Then use the includegraphics command to include it in your document. Use the figure environment and the caption command to add a number and a caption to your figure. See the code for Figure \ref{fig:frog} in this section for an example.
+
+% NOTE: Add the [H] to place image HERE instead of floating wherever LaTeX thinks is best
+\begin{figure}[H] 
+\centering
+\includegraphics[width=0.3\textwidth]{frog.jpg}
+\caption{\label{fig:frog}This frog was uploaded via the project menu.}
+\end{figure}
+
+\subsection{How to add Tables}
+
+Use the table and tabular commands for basic tables --- see Table~\ref{tab:widgets}, for example. 
+
+\begin{table}
+\centering
+\begin{tabular}{l|r}
+Item & Quantity \\\hline
+Widgets & 42 \\
+Gadgets & 13
+\end{tabular}
+\caption{\label{tab:widgets}An example table.}
+\end{table}
+
+\subsection{How to write Mathematics}
+
+\LaTeX{} is great at typesetting mathematics. Let $X_1, X_2, \ldots, X_n$ be a sequence of independent and identically distributed random variables with $\text{E}[X_i] = \mu$ and $\text{Var}[X_i] = \sigma^2 < \infty$, and let
+\[S_n = \frac{X_1 + X_2 + \cdots + X_n}{n}
+      = \frac{1}{n}\sum_{i}^{n} X_i\]
+denote their mean. Then as $n$ approaches infinity, the random variables $\sqrt{n}(S_n - \mu)$ converge in distribution to a normal $\mathcal{N}(0, \sigma^2)$.
+
+\subsection{How to add Lists}
+
+You can make lists with automatic numbering \dots
+
+\begin{enumerate}
+\item Like this,
+\item and like this.
+\end{enumerate}
+\dots or bullet points \dots
+\begin{itemize}
+\item Like this,
+\item and like this.
+\end{itemize}
+
+%%%%%%%
+% END %
+%%%%%%%
+
+\end{document}
