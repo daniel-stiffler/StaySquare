@@ -1,3 +1,5 @@
+`define C_S_AXI_DATA_WIDTH 32
+
 module top;
 
     logic [63:0] s_axis_video_tdata_in;
@@ -35,7 +37,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
              .aclk(aclk), 
              .aclken(aclken), 
              .aresetn(aresetn),
-             .ENABLE_KEYSTONE.(ENABLE_KEYSTONE),
+             .ENABLE_KEYSTONE(ENABLE_KEYSTONE),
              .SW_RESET(SW_RESET),
              .H11(H11),
              .H12(H12),

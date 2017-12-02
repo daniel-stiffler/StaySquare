@@ -291,7 +291,7 @@ module Multiplier_Handler
 
     logic req_1, req_2, req_3, req_4, req_5;
 
-    mult_gen_0 m(.CLK(clock), .CE(enable), .*);
+    mult_gen_0 m(.CLK(clock), .CE(enable), .A(A), .B(B), .P(P));
 
     assign done = req_5;
 
@@ -456,11 +456,11 @@ module Transformation_Datapath
     // ROUNDERS TO CONVERT TO INT FOR LOOKUP //
     ///////////////////////////////////////////
 
-    Round_to_Coords r0(.result(x_norm),
-                       .value(x_round));
+    Round_to_Coords r0(.result(x_round),
+                       .value(x_norm));
 
-    Round_to_Coords r1(.result(y_norm),
-                       .value(y_round));
+    Round_to_Coords r1(.result(y_round),
+                       .value(y_norm));
 
     //////////////////////////////////////
     // ADDERS FOR COORDINATE ADJUSTMENT //
