@@ -33,7 +33,7 @@ module Keystone
     input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H22,
     input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H23,
     input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H31,
-    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H32,
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H32
     );
 
     Keystone_Correction ip(.pixel_stream_out(s_axis_video_tdata_out),

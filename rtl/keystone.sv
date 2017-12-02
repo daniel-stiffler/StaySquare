@@ -70,7 +70,7 @@ module Round_to_Coords
     // GRAB AND ROUND INTEGER HALF OF FIXED POINT //
     ////////////////////////////////////////////////
 
-    logic [FIXED_POINT-1:0] dropped;
+    logic [`FIXED_POINT-1:0] dropped;
     int upper;
     int round_up_upper;
     
@@ -98,7 +98,7 @@ module Divider
      input int   in_pointer, out_pointer,
     output logic [47:0] out,
      input wire clock, reset, enable,
-    output logic done)
+    output logic done);
     
     logic        b_valid[0:`NUM_DIVS - 1];
     logic        b_ready[0:`NUM_DIVS - 1];
@@ -327,13 +327,13 @@ module Transformation_Datapath
   (output logic [7:0] red, green, blue,
    output int         x_result, y_result,
    output logic       ready_out,
-    input logic       ready_in,
+    input wire        ready_in,
     input packet      dest_pixel_in,
    output packet      dest_pixel_out,
     input int         a, b, c, d, e, f, g, h,
     input wire  [7:0] r_source, g_source, b_source,
     input wire        valid_coords,
-   output wire        datapath_read_request,
+   output wire        read_request,
     input wire        read_done,
     input wire        clock, reset);
 
@@ -346,7 +346,7 @@ module Transformation_Datapath
     logic [47:0] x_norm, y_norm;
     int          x, y;
     int          x_round, y_round;
-    logic        x_div_done, y_div_done;
+    logic        div_done;
     logic        done_ax, done_by, done_dx;
     logic        done_ey, done_gx, done_hy;
 
@@ -413,11 +413,11 @@ module Transformation_Datapath
 
     always_ff @(posedge clock) begin
         if(reset) begin
-            dest_pixel_1 <= '0;
-            dest_pixel_2 <= '0;
-            dest_pixel_3 <= '0;
-            dest_pixel_4 <= '0;
-            dest_pixel_5 <= '0;
+            dest_pixel_1 <= '{x:'0,y:'0,valid:'0};
+            dest_pixel_2 <= '{x:'0,y:'0,valid:'0};
+            dest_pixel_3 <= '{x:'0,y:'0,valid:'0};
+            dest_pixel_4 <= '{x:'0,y:'0,valid:'0};
+            dest_pixel_5 <= '{x:'0,y:'0,valid:'0};
         end else begin
             dest_pixel_1 <= dest_pixel_in;
             dest_pixel_2 <= dest_pixel_1;
@@ -439,10 +439,10 @@ module Transformation_Datapath
     // DIVIDERS FOR HOMOGENOUS NORMALIZATION //
     ///////////////////////////////////////////
 
-    Divider_Handler dh0(.input_A_0(xw[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
-                        .input_B_0(w[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
-                        .input_A_1(yw[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
-                        .input_B_1(w[FIXED_POINT/2+INT_SIZE-1:FIXED_POINT/2]),
+    Divider_Handler dh0(.input_A_0(xw[`FIXED_POINT/2+`INT_SIZE-1:`FIXED_POINT/2]),
+                        .input_B_0(w[`FIXED_POINT/2+`INT_SIZE-1:`FIXED_POINT/2]),
+                        .input_A_1(yw[`FIXED_POINT/2+`INT_SIZE-1:`FIXED_POINT/2]),
+                        .input_B_1(w[`FIXED_POINT/2+`INT_SIZE-1:`FIXED_POINT/2]),
                         .dest_pixel_in(dest_pixel_from_mults),
                         .out_0(x_norm),
                         .out_1(y_norm),
@@ -480,7 +480,7 @@ module Transformation_Datapath
     ///////////////////////////
 
     logic [7:0] r_source_reg ,g_source_reg ,b_source_reg;
-    logic valid_coords_reg
+    logic valid_coords_reg;
 
     always_ff @(posedge clock) begin
         if(reset) begin
@@ -672,9 +672,9 @@ endmodule: Input_BRAM_Controller
 /////////////////////////////////////////////////
 module Queue
   (output logic [63:0] out,
-    input logic [63:0] in,
-    input logic put, get,
-    input logic clock, reset,
+    input wire  [63:0] in,
+    input wire  put, get,
+    input wire  clock, reset,
    output logic empty, full);
 
     logic [4:0] put_pointer, get_pointer;
@@ -752,7 +752,7 @@ module Keystone_Correction
     logic valid_coords, read_done;
     logic last_col_done, last_row_done;
     logic done_dest_frame;
-    logic datapath_read_request;
+    logic datapath_read_request, last_request;
     logic request_calculation, datapath_ready;
     int   calculating;
     int   current_x_input, current_y_input;
