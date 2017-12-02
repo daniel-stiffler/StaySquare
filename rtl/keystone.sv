@@ -194,12 +194,15 @@ module Divider_Handler
      input wire  ready_in,
     output logic [47:0] out_0, out_1,
     output packet dest_pixel_out,
-     input wire clock, reset, enable,
+     input wire clock, reset,
     output logic done);
 
     int          in_pointer, out_pointer;
     packet       dest_pixel_in_reg[0:`NUM_DIVS - 1];
     logic        done_0, done_1;
+    logic        enable;
+    
+    assign enable = 1'b1;
 
     assign done = (done_0 & done_1); // TODO: this is only one cycle but needs to be more...
 
@@ -283,13 +286,16 @@ endmodule: Divider_Handler
 //                                                      //
 //////////////////////////////////////////////////////////
 module Multiplier_Handler
-    (input wire clock, reset, enable,
+    (input wire clock, reset,
     output logic [63:0] P, 
      input wire [31:0] A, B,
      input wire request,
     output logic done);
 
     logic req_1, req_2, req_3, req_4, req_5;
+    logic enable;
+    
+    assign enable = 1'b1;
 
     mult_gen_0 m(.CLK(clock), .CE(enable), .A(A), .B(B), .P(P));
 
@@ -466,8 +472,8 @@ module Transformation_Datapath
     // ADDERS FOR COORDINATE ADJUSTMENT //
     //////////////////////////////////////
 
-    assign x_result = x_round +  `WIDTH / 2;
-    assign y_result = y_round + `HEIGHT / 2;
+    assign x_result = x_round + 0; // `WIDTH / 2;
+    assign y_result = y_round + 0; // `HEIGHT / 2;
 
     ////////////////////
     // MEMORY HANDLER //
