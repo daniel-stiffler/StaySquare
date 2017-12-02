@@ -54,6 +54,17 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         aresetn = 1'b1;
         SW_RESET = 1'b0;
         ENABLE_KEYSTONE = 1'b1;
+
+        H11 = 1'b1;
+        H22 = 1'b1;
+
+        H12 = 1'b0;
+        H13 = 1'b0;
+        H21 = 1'b0;
+        H23 = 1'b0;
+        H31 = 1'b0;
+        H32 = 1'b0;
+
         forever #5 aclk = ~aclk;
     end
 
@@ -69,7 +80,17 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         aresetn <= 1'b1;
         @(posedge aclk);
 
-        $finish;
+        s_axis_video_tdata_in  <= 64'hFFFF_FFFF_FFFF_FFFF;
+        s_axis_video_tvalid_in <= 1'b1;
+        s_axis_video_tuser_in  <= 1'b1;
+        s_axis_video_tlast_in  <= 1'b0;
+        s_axis_video_tready_in <= 1'b1;
+
+        @(posedge aclk);
+
+        s_axis_video_tuser_in <= 1'b0;
+
+        #10000 $finish;
     end
 
 endmodule: top
