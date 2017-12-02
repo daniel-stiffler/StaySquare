@@ -49,13 +49,8 @@ module Keystone
                            .clock(aclk),
                            .clock_en(aclken & ENABLE_KEYSTONE),
                            .reset(~aresetn | SW_RESET),
-                           .H11(H11),
-                           .H12(H12),
-                           .H13(H13),
-                           .H21(H21),
-                           .H22(H22),
-                           .H23(H23),
-                           .H31(H31),
-                           .H32(H32));
+                           .H11(H11), .H12(H12), .H13(H13),
+                           .H21(H21), .H22(H22), .H23(H23),
+                           .H31(H31), .H32(H32));
 
 endmodule: Keystone
