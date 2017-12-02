@@ -22,7 +22,29 @@ module top;
     logic [`C_S_AXI_DATA_WIDTH-1 : 0] H31;
     logic [`C_S_AXI_DATA_WIDTH-1 : 0] H32;
 
-Keystone dut(.*);
+Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
+             .s_axis_video_tvalid_in(s_axis_video_tvalid_in),
+             .s_axis_video_tready_out(s_axis_video_tready_out),
+             .s_axis_video_tuser_in(s_axis_video_tuser_in),
+             .s_axis_video_tlast_in(s_axis_video_tlast_in),
+             .s_axis_video_tdata_out(s_axis_video_tdata_out),
+             .s_axis_video_tvalid_out(s_axis_video_tvalid_out),
+             .s_axis_video_tready_in(s_axis_video_tready_in),
+             .s_axis_video_tuser_out(s_axis_video_tuser_out),
+             .s_axis_video_tlast_out(s_axis_video_tlast_out),
+             .aclk(aclk), 
+             .aclken(aclken), 
+             .aresetn(aresetn),
+             .ENABLE_KEYSTONE.(ENABLE_KEYSTONE),
+             .SW_RESET(SW_RESET),
+             .H11(H11),
+             .H12(H12),
+             .H13(H13),
+             .H21(H21),
+             .H22(H22),
+             .H23(H23),
+             .H31(H31),
+             .H32(H32));
 
     initial begin
         aclk = 1'b0;
