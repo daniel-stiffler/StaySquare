@@ -67,7 +67,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
 
         forever #5 aclk = ~aclk;
     end
-
+    int i;
     initial begin
 
     	$monitor("data_in: %x, valid_in: %b, ready_out: %b, SOF_in: %b, EOL_in: %b\n",
@@ -81,7 +81,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
     		     "pass_count_reported: %d, pass_count_read: %d\n",
     		 dut.ip.c0.pass_count_reported, dut.ip.c0.pass_count_read,
     		     "x_write: %d, y_write: %d, x_read: %d, y_read: %d\n",
-    		 dut.ip.c0.x_write, dut.ip.c0.y_write, dut.ip.c0.x_read, dut.ip.c0.y_read,
+    		 dut.ip.c0.x_write, dut.ip.c0.y_write, dut.ip.c0.x_read, dut.ip.c0.y_read);/*,
     		     "xw: %x, yw: %x, w: %x\n",
     		 dut.ip.d0.xw, dut.ip.d0.yw, dut.ip.d0.w,
     		     "ax: %x, dx: %x, gx: %x, by: %x, ey: %x, hy: %x\n",
@@ -99,7 +99,15 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
     		     "request_calculation: %b, controller_curr_state: %s\n",
     		 dut.ip.request_calculation, dut.ip.controller_curr_state.name,
     		     "datapath_ready: %b, last_request: %b, ns: %b\n",
-    		 dut.ip.datapath_ready, dut.ip.last_request, dut.ip.controller_curr_state);
+    		 dut.ip.datapath_ready, dut.ip.last_request, dut.ip.controller_curr_state,
+    		     "fractional: %x, div_res: %x, rounded_div_res: %x, dropped: %x, upper: %x, result:%x\n",
+    		 dut.ip.d0.r0.fractional_remainder, dut.ip.d0.r0.div_res, dut.ip.d0.r0.rounded_div_res, dut.ip.d0.r0.dropped, dut.ip.d0.r0.upper, dut.ip.d0.r0.result,
+    		     "a_valid[10]: %x, a_ready[10]: %x, a_data[10]: %x, b_valid[10]: %x, b_ready[10]: %x, b_data[10]: %x\n",
+    		 dut.ip.d0.dh0.d0.a_valid[10], dut.ip.d0.dh0.d0.a_ready[10], dut.ip.d0.dh0.d0.a_data[10], dut.ip.d0.dh0.d0.b_valid[10], dut.ip.d0.dh0.d0.b_ready[10], dut.ip.d0.dh0.d0.b_data[10],
+    		     "out_valid[10]: %x, out_data[10]: %x\n",
+    		 dut.ip.d0.dh0.d0.out_valid[10], dut.ip.d0.dh0.d0.out_data[10],
+    		     "ready_in: %b\n",
+    		 dut.ip.d0.dh0.ready_in);*/
 
         @(posedge aclk);
         @(posedge aclk);
@@ -121,8 +129,11 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         @(posedge aclk);
 
         s_axis_video_tuser_in <= 1'b0;
+        
+        for(i = 0; i < 10000; i = i + 1)
+            #10 s_axis_video_tdata_in <= s_axis_video_tdata_in - 1;
 
-        #10000 $finish;
+        $finish;
     end
 
 endmodule: top

@@ -4,8 +4,9 @@
 */
 
 `default_nettype none
+
 `define BRAM_ROWS 16
-`define NUM_DIVS 31
+`define NUM_DIVS 32
 `define WIDTH 1920
 `define HEIGHT 1080
 `define FIXED_POINT 16
@@ -59,25 +60,11 @@ module Round_to_Coords
     logic [15:0] fractional_remainder;
     int div_res;
     int round_up_div_res;
-    int rounded_div_res;
 
     assign fractional_remainder = value[15:0];
     assign div_res = value[47:16];
     assign round_up_div_res = fractional_remainder[15];
-    assign rounded_div_res = div_res + round_up_div_res;
-
-    ////////////////////////////////////////////////
-    // GRAB AND ROUND INTEGER HALF OF FIXED POINT //
-    ////////////////////////////////////////////////
-
-    logic [`FIXED_POINT-1:0] dropped;
-    int upper;
-    int round_up_upper;
-    
-    assign dropped = rounded_div_res[15:0];
-    assign upper = {{16{rounded_div_res[31]}}, rounded_div_res[31:16]};
-    assign round_up_upper = dropped[15];
-    assign result = upper + round_up_upper;
+    assign result = div_res + round_up_div_res;
 
 endmodule: Round_to_Coords
 
@@ -94,7 +81,7 @@ endmodule: Round_to_Coords
 /////////////////////////////////////////////////////////
 module Divider
    (input wire [31:0] input_A, input_B,
-     input wire  ready_in, valid,
+     input wire  valid,
      input int   in_pointer, out_pointer,
     output logic [47:0] out,
      input wire clock, reset, enable,
@@ -212,7 +199,6 @@ module Divider_Handler
 
     Divider d0 (.input_A(input_A_0), 
                 .input_B(input_B_0),
-                .ready_in(ready_in), 
                 .valid(dest_pixel_in.valid),
                 .in_pointer(in_pointer), 
                 .out_pointer(out_pointer),
@@ -224,7 +210,6 @@ module Divider_Handler
 
     Divider d1 (.input_A(input_A_1), 
                 .input_B(input_B_1),
-                .ready_in(ready_in), 
                 .valid(dest_pixel_in.valid),
                 .in_pointer(in_pointer), 
                 .out_pointer(out_pointer),
@@ -248,12 +233,17 @@ module Divider_Handler
     end
     
     always_ff @(posedge clock) begin
-            if(reset)
+            if(reset) begin
+                $display("reset");
                 out_pointer <= 0;
-            else if(out_pointer == `NUM_DIVS-1 && ready_in == 1'b1) 
+            end else if(out_pointer == `NUM_DIVS-1 && ready_in == 1'b1)  begin
                 out_pointer <= 0;
-            else if(ready_in)
+                $display("nAH");
+            end else if(ready_in & done) begin
+                $display("yo");
                 out_pointer <= out_pointer + 1;
+            end else 
+                $display("no case, since ready_in = %b",ready_in);
     end
 
     ////////////////////////
@@ -342,6 +332,8 @@ module Transformation_Datapath
    output wire        read_request,
     input wire        read_done,
     input wire        clock, reset);
+    
+    assign ready_out = 1'b1;
 
     ////////////////////////////////////////////
     // CALCULATE COORDINATES FOR COLOR LOOKUP //
@@ -439,7 +431,7 @@ module Transformation_Datapath
 
     assign xw = ax + by + {{32{c[31]}},c};
     assign yw = dx + ey + {{32{f[31]}},f};
-    assign  w = gx + hy + 64'd1;
+    assign  w = gx + hy + 64'h0000000001_000000; // Fixed-point 1
 
     ///////////////////////////////////////////
     // DIVIDERS FOR HOMOGENOUS NORMALIZATION //
@@ -778,9 +770,12 @@ module Keystone_Correction
     assign b_in = pixel_stream_in[19:12];
     assign r_in = pixel_stream_in[29:22];
 
-    assign output_pixel_packet[9:2]   = g_calc;
-    assign output_pixel_packet[19:12] = b_calc;
-    assign output_pixel_packet[29:22] = r_calc;    
+    always_comb begin
+        output_pixel_packet = '0;
+        output_pixel_packet[9:2]   = g_calc;
+        output_pixel_packet[19:12] = b_calc;
+        output_pixel_packet[29:22] = r_calc;
+    end  
 
     //////////////////////////////////
     // RAM HANDLER FOR INPUT BUFFER //
