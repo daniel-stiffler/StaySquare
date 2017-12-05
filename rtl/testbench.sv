@@ -148,6 +148,28 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
 
         s_axis_video_tuser_in <= 1'b0;
         
+        for(i = 0; i < 5; i = i + 1) begin
+            r <= r - 1;
+            g <= g + 1;
+            b <= b - 2;
+            s_axis_video_tlast_in <= ( (pixels+1) % 1920 == 0);
+            pixels <= pixels + 1;
+            #10;
+        end
+        
+        s_axis_video_tvalid_in <= 1'b0;
+        
+        for(i = 0; i < 5; i = i + 1) begin
+            r <= r - 1;
+            g <= g + 1;
+            b <= b - 2;
+            s_axis_video_tlast_in <= ( (pixels+1) % 1920 == 0);
+            pixels <= pixels + 1;
+            #10;
+        end
+        
+        s_axis_video_tvalid_in <= 1'b1;
+        
         for(i = 0; i < 2073700; i = i + 1) begin
             r <= r - 1;
             g <= g + 1;
