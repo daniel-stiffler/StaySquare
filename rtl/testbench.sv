@@ -134,6 +134,8 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         aresetn <= 1'b1;
         @(posedge aclk);
         @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
 
         {r,g,b} <= 24'hFF_FF_FF;
         s_axis_video_tvalid_in <= 1'b1;

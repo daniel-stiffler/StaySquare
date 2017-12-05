@@ -282,20 +282,20 @@ module Multiplier_Handler
      input wire request,
     output logic done);
 
-    logic req_1, req_2, req_3, req_4, req_5;
+    logic req_1, req_2, req_3, req_4, req_5, req_6;
     logic enable;
     
     assign enable = 1'b1;
 
     mult_gen_0 m(.CLK(clock), .CE(enable), .A(A), .B(B), .P(P));
 
-    assign done = req_5;
+    assign done = req_6;
 
     // Delay request by 5 cycles to indicate end of 6 stage pipeline
     always_ff @(posedge clock) begin
         if(reset) begin
         
-            {req_1,req_2,req_3,req_4,req_5} <= 5'b00000;
+            {req_1,req_2,req_3,req_4,req_5,req_6} <= 6'b000000;
             
         end else if (enable) begin
         
@@ -304,6 +304,7 @@ module Multiplier_Handler
             req_3 <= req_2;
             req_4 <= req_3;
             req_5 <= req_4;
+            req_6 <= req_5;
             
         end
     end
@@ -349,7 +350,7 @@ module Transformation_Datapath
     logic        done_ey, done_gx, done_hy;
 
     packet dest_pixel_1, dest_pixel_2, dest_pixel_3;
-    packet dest_pixel_4, dest_pixel_5;
+    packet dest_pixel_4, dest_pixel_5, dest_pixel_6;
     packet dest_pixel_from_mults, dest_pixel_out_divs;
 
     assign x = dest_pixel_in.x;
@@ -359,7 +360,7 @@ module Transformation_Datapath
     // MULTIPLIERS FOR VECTOR MATRIX MULTIPLY //
     ////////////////////////////////////////////
 
-    assign dest_pixel_from_mults = dest_pixel_5;
+    assign dest_pixel_from_mults = dest_pixel_6;
 
     Multiplier_Handler m0(.clock(clock),
                           .reset(reset),
@@ -416,12 +417,14 @@ module Transformation_Datapath
             dest_pixel_3 <= '{x:'0,y:'0,valid:'0};
             dest_pixel_4 <= '{x:'0,y:'0,valid:'0};
             dest_pixel_5 <= '{x:'0,y:'0,valid:'0};
+            dest_pixel_6 <= '{x:'0,y:'0,valid:'0};
         end else begin
             dest_pixel_1 <= dest_pixel_in;
             dest_pixel_2 <= dest_pixel_1;
             dest_pixel_3 <= dest_pixel_2;
             dest_pixel_4 <= dest_pixel_3;
             dest_pixel_5 <= dest_pixel_4;
+            dest_pixel_6 <= dest_pixel_5;
         end
     end
 
