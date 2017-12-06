@@ -7,7 +7,8 @@ module top;
     wire         s_axis_video_tready_out;
     logic        s_axis_video_tuser_in;
     logic        s_axis_video_tlast_in;
-    wire  [63:0] s_axis_video_tdata_out;
+    wire  [63:0] s_axis_video_tdata_out; 
+    logic [63:0] last_data;
     wire         s_axis_video_tvalid_out;
     logic        s_axis_video_tready_in;
     wire         s_axis_video_tuser_out;
@@ -54,6 +55,28 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
     int i;
     int pixels;
     
+    always_ff @(posedge aclk) begin
+        if(~aresetn) last_data <= '0;
+        else if(s_axis_video_tvalid_out) last_data <= s_axis_video_tdata_out;
+    end
+    
+    /*
+    assert property ( @(posedge aclk)
+        s_axis_video_tvalid_out |-> 
+        ( (s_axis_video_tdata_out[9:2] == last_data[9:2] + 1) &&
+          (s_axis_video_tdata_out[19:12] == last_data[19:12] - 2) && 
+          (s_axis_video_tdata_out[29:22] == last_data[29:22] - 1)) );
+    */
+    
+    always_comb begin
+        if(s_axis_video_tvalid_out == 1'b1 && s_axis_video_tdata_out != 0) begin
+         
+            if(~( (s_axis_video_tdata_out[9:2] == (last_data[9:2] + 8'd1)) &&
+              (s_axis_video_tdata_out[19:12] == (last_data[19:12] - 8'd2)) && 
+              (s_axis_video_tdata_out[29:22] == (last_data[29:22] - 8'd1))))
+              $display("DATA OUT NOT CORRECT\n");
+        end
+    end
 
     initial begin
         aclk = 1'b0;
@@ -169,6 +192,28 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         end
         
         s_axis_video_tvalid_in <= 1'b1;
+        
+        for(i = 0; i < 5; i = i + 1) begin
+                    r <= r - 1;
+                    g <= g + 1;
+                    b <= b - 2;
+                    s_axis_video_tlast_in <= ( (pixels+1) % 1920 == 0);
+                    pixels <= pixels + 1;
+                    #10;
+                end
+                
+        s_axis_video_tready_in <= 1'b0;
+        
+        for(i = 0; i < 15; i = i + 1) begin
+                    r <= r - 1;
+                    g <= g + 1;
+                    b <= b - 2;
+                    s_axis_video_tlast_in <= ( (pixels+1) % 1920 == 0);
+                    pixels <= pixels + 1;
+                    #10;
+                end
+                
+        s_axis_video_tready_in <= 1'b1;
         
         for(i = 0; i < 2073700; i = i + 1) begin
             r <= r - 1;

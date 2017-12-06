@@ -258,7 +258,10 @@ module Divider_Handler
     // DEST LOCATION REGS //
     ////////////////////////
 
-    assign dest_pixel_out = dest_pixel_in_reg[out_pointer];
+    always_comb begin
+        dest_pixel_out = dest_pixel_in_reg[out_pointer];
+        dest_pixel_out.valid = done;
+    end
     
     int v;
     always_ff @(posedge clock) begin
@@ -596,8 +599,6 @@ module Input_BRAM_Controller
     
     always_comb begin
     
-        read_value = '0;
-    
         for (row = 0; row < `BRAM_ROWS; row = row + 1) begin
             for (col = 0; col < 2; col = col + 1) begin
             
@@ -606,16 +607,31 @@ module Input_BRAM_Controller
                     data_in[row][col] = write_value;
                     write_addr[row][col] = {22'b0,pos_bram_write};
                     write_en[row][col] = write_request;
+
+                end else begin
+                
+                    data_in[row][col] = '0;
+                    write_addr[row][col] = '0;
+                    write_en[row][col] = 1'b0;
+                    
+                end
+            end
+        end
+        
+        read_value = '0;
+    
+        for (row = 0; row < `BRAM_ROWS; row = row + 1) begin
+            for (col = 0; col < 2; col = col + 1) begin
+            
+                if(row == bram_row_read && col == bram_col_read) begin
+                
                     read_addr[row][col] = {22'b0,pos_bram_read};
                     read_en[row][col] = read_request;
                     
                     read_value = data_out[row][col];
                     
                 end else begin
-                
-                    data_in[row][col] = '0;
-                    write_addr[row][col] = '0;
-                    write_en[row][col] = 1'b0;
+               
                     read_addr[row][col] = '0;
                     read_en[row][col] = 1'b0;
                     
@@ -624,9 +640,9 @@ module Input_BRAM_Controller
         end
         
         pass_count_reported = read_value[31:24];
-        
+          
     end
-
+    
     //////////////////
     // PIXEL VALUES //
     //////////////////
@@ -703,8 +719,8 @@ module Queue
         end else if(~get &  put & ~full) begin
             put_pointer <= put_pointer + 1;
         end else if( get &  put) begin
-            put_pointer <= put_pointer + 1;
-            get_pointer <= get_pointer + 1;
+            put_pointer <= put_pointer + 0;
+            get_pointer <= get_pointer + 0;
         end
     end
 
