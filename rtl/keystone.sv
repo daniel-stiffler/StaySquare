@@ -362,7 +362,7 @@ module Transformation_Datapath
 
     packet dest_pixel_1, dest_pixel_2, dest_pixel_3;
     packet dest_pixel_4, dest_pixel_5, dest_pixel_6;
-    packet dest_pixel_from_mults, dest_pixel_out_divs;
+    packet dest_pixel_from_mults, dest_pixel_out_divs, dest_pixel_out_divs_reg;
 
     assign x = dest_pixel_in.x;
     assign y = dest_pixel_in.y;
@@ -499,13 +499,15 @@ module Transformation_Datapath
             r_source_reg <= '0;
             g_source_reg <= '0;
             b_source_reg <= '0;
+            dest_pixel_out_divs_reg <= '{x:'0, y:'0, valid:'0};
             dest_pixel_out <= '{x:'0, y:'0, valid:'0};
             valid_coords_reg <= '0;
         end else begin
             r_source_reg <= r_source;
             g_source_reg <= g_source;
             b_source_reg <= b_source;
-            dest_pixel_out <= dest_pixel_out_divs;
+            dest_pixel_out_divs_reg <= dest_pixel_out_divs;
+            dest_pixel_out <= dest_pixel_out_divs_reg;
             valid_coords_reg <= valid_coords;
         end
     end
@@ -705,7 +707,7 @@ module Queue
     logic [4:0] put_pointer, get_pointer;
     logic [63:0] q[0:31];
 
-    assign out = q[get_pointer];
+    assign out = (get & put) ? in : q[get_pointer];
     
     assign empty =  (put_pointer      == get_pointer);
     assign full  = ((put_pointer + 1) == get_pointer);
@@ -729,7 +731,7 @@ module Queue
         for(i = 0; i < 32; i = i + 1) begin
             if(reset) begin
                 q[i] <= '0;
-            end else if(i == put_pointer && put == 1'b1) begin
+            end else if(i == put_pointer && put == 1'b1 && get == 1'b0 && full == 1'b0) begin
                 q[i] <= in;
             end
         end
