@@ -145,18 +145,34 @@ def apply_transformation(H, fname, width, height):
     src_pixels = src_img.load() # Fast pixel access object [x, y]
 
     # Setup dest image
-    dest_img = Image.new("RGB", (2*width, 2*height))
+    dest_img = Image.new("RGB", (width, height))
     dest_pixels = dest_img.load() # Fast pixel access object [x, y]
 
+    srcr = ""
+    srcg = ""
+    srcb = ""
+
+    ansr = ""
+    ansg = ""
+    ansb = ""
+
     # Extend the dimension *2 in each dimension
-    for y in range(-height, height):
-        for x in range(-width, width):
+    for y in range(0, height):
+        for x in range(0, width):
+
+            srcr = srcr + "%x\n" % src_pixels[x, y][0]
+            srcb = srcb + "%x\n" % src_pixels[x, y][1]
+            srcg = srcg + "%x\n" % src_pixels[x, y][2]
+
             # Homogeneous screen coordinate
             screen_coord = np.array([[x], [y], [1.]])
 
+            screen_coord[0] -= width/2
+            screen_coord[1] -= height/2
+
             # Map the homogeneous coordinate to the corresponding
             # non-homogeneous coordinate in the input plane
-            mapped_coord = H @ screen_coord
+            mapped_coord = np.matmul(H,screen_coord)
 
             w = mapped_coord[2, 0] # Inhomogeneity
             mapped_coord = mapped_coord / w # Convert to homogeneous
@@ -164,15 +180,43 @@ def apply_transformation(H, fname, width, height):
             xp = int(round(mapped_coord[0, 0]))
             yp = int(round(mapped_coord[1, 0]))
 
-            xp += width/2.
-            yp += width/2.
+            xp += width/2
+            yp += height/2
 
             if 0 <= xp < width and 0 <= yp < height:
-                dest_pixels[x+width, y+height] = src_pixels[xp, yp]
-            elif -width/2. < x < width/2. and -height/2. < y < height/2.:
-                dest_pixels[x+width, y+height] = (255, 255, 255) # White
+                dest_pixels[x, y] = src_pixels[xp, yp]
             else:
-                dest_pixels[x+width, y+height] = (0, 0, 0) # Black
+                dest_pixels[x, y] = (255, 255, 255) # Black
+
+            if 0 <= xp < width and 0 <= yp < height:
+                ansr = ansr + "%x\n" % src_pixels[xp, yp][0]
+                ansb = ansb + "%x\n" % src_pixels[xp, yp][1]
+                ansg = ansg + "%x\n" % src_pixels[xp, yp][2]
+            else:
+                ansr = ansr + "FF\n"
+                ansg = ansg + "FF\n"
+                ansb = ansb + "FF\n"
+
+    f = open('rtl/r_source.hex','w')
+    f.write(ansr)
+    f.close()
+    f = open('rtl/g_source.hex','w')
+    f.write(ansg)
+    f.close()
+    f = open('rtl/b_source.hex','w')
+    f.write(ansb)
+    f.close()
+
+    print len(ansr.split()), len(ansg.split()), len(ansb.split())
+    f = open('rtl/r_answer.hex','w')
+    f.write(ansr)
+    f.close()
+    f = open('rtl/g_answer.hex','w')
+    f.write(ansg)
+    f.close()
+    f = open('rtl/b_answer.hex','w')
+    f.write(ansb)
+    f.close()
 
     dest_img.save(fout_path)
     print("Saved transformed image to {}".format(fout_path))
@@ -180,17 +224,17 @@ def apply_transformation(H, fname, width, height):
 def main():
     parser = OptionParser()
     parser.add_option("-f", "--file", dest="fname", help="Input image name",
-                      default="grad.png")
+                      default="new_grad_hdmi.png")
     parser.add_option("--width", dest="width", help="Input image width",
-                      default=256)
+                      default=1920)
     parser.add_option("--height", dest="height", help="Input image height",
-                      default=256)
+                      default=1080)
     parser.add_option("-d", "--depth", dest="depth",
                       help="Project depth (imaginary units)", default=1000)
     parser.add_option("--vtilt", dest="alpha_v", help="Vertical tilt",
-                      type=float, default=pi/6.)
+                      type=float, default=-pi/12.)
     parser.add_option("--htilt", dest="alpha_h", help="Horizontal tilt",
-                      type=float, default=pi/6.)
+                      type=float, default=0.)
 
     options, args = parser.parse_args()
 
@@ -220,7 +264,7 @@ def main():
     H = get_homography(proj_coors, screen_coors)
     H_inv = np.linalg.inv(H) # Reverse the mapping for debugging purposes
 
-    apply_transformation(H_inv, "grad.png", width, height)
+    apply_transformation(H, "new_grad_hdmi.png", width, height)
 
 if __name__ == "__main__":
     # Make printing more reasonable
