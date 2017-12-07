@@ -73,10 +73,12 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
     correct = 1'b1;
         if(s_axis_video_tvalid_out == 1'b1) begin
          
-            if(s_axis_video_tdata_out != source[pixels_out])
+            if(s_axis_video_tready_in == 1'b1 && 
+               s_axis_video_tdata_out != source[pixels_out])
+               
                 correct = 1'b0;
   
-            $strobe("in: %x out: %x",s_axis_video_tdata_out,source[pixels_out]);
+            $strobe("out: %x ans: %x",s_axis_video_tdata_out,source[pixels_out]);
             
             
             if(~correct_reg) $strobe("DATA OUT NOT CORRECT >:(");
@@ -146,7 +148,8 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
     
     always_ff @(posedge aclk) begin
         if(~aresetn) pixels_out <= 0;
-        else if(s_axis_video_tvalid_out) pixels_out <= pixels_out + 1;
+        else if(s_axis_video_tvalid_out & 
+                s_axis_video_tready_in) pixels_out <= pixels_out + 1;
     end
     
     initial begin
@@ -222,7 +225,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
             #10;
         end
         
-        s_axis_video_tvalid_in <= 1'b0;
+        //s_axis_video_tvalid_in <= 1'b0;
         
         for(i = 0; i < 50; i = i + 1) begin
             r <= r - 1;

@@ -354,7 +354,7 @@ module Transformation_Datapath
     logic [63:0] ax, by, dx, ey, gx, hy;
     logic [63:0] xw, yw, w;
     logic [47:0] x_norm, y_norm;
-    int          x, y;
+    int          x, y, x_in, y_in;
     int          x_round, y_round;
     logic        div_done;
     logic        done_ax, done_by, done_dx;
@@ -364,8 +364,15 @@ module Transformation_Datapath
     packet dest_pixel_4, dest_pixel_5, dest_pixel_6;
     packet dest_pixel_from_mults, dest_pixel_out_divs, dest_pixel_out_divs_reg;
 
-    assign x = dest_pixel_in.x;
-    assign y = dest_pixel_in.y;
+    assign x_in = dest_pixel_in.x;
+    assign y_in = dest_pixel_in.y;
+    
+    ///////////////////////////
+    // COORDINATE CONVERSION //
+    ///////////////////////////
+    
+    assign x = x_in -  `WIDTH / 2;
+    assign y = y_in - `HEIGHT / 2;
 
     ////////////////////////////////////////////
     // MULTIPLIERS FOR VECTOR MATRIX MULTIPLY //
@@ -474,12 +481,12 @@ module Transformation_Datapath
     Round_to_Coords r1(.result(y_round),
                        .value(y_norm));
 
-    //////////////////////////////////////
-    // ADDERS FOR COORDINATE ADJUSTMENT //
-    //////////////////////////////////////
+    ////////////////////////
+    // COORDINATE RESTORE //
+    ////////////////////////
 
-    assign x_result = x_round + 0; // `WIDTH / 2;
-    assign y_result = y_round + 0; // `HEIGHT / 2;
+    assign x_result = x_round +  `WIDTH / 2;
+    assign y_result = y_round + `HEIGHT / 2;
 
     ////////////////////
     // MEMORY HANDLER //
@@ -655,7 +662,7 @@ module Input_BRAM_Controller
             g_out = read_value[15: 8];
             b_out = read_value[ 7: 0];
             done  = (((x_read < x_write) && (y_read == y_write)) 
-                                         || (y_read  < y_write));
+                                         || (y_read  < y_write)) || (read_request == 1'b0);
         end else begin // hot pink
             r_out = 8'hFF;
             g_out = 8'h1E;
@@ -698,19 +705,27 @@ endmodule: Input_BRAM_Controller
 //                                             //
 /////////////////////////////////////////////////
 module Queue
-  (output logic [63:0] out,
-    input wire  [63:0] in,
+  (output logic [63+1:0] out,
+   output logic valid,
+    input wire  [63+1:0] in,
     input wire  put, get,
     input wire  clock, reset,
    output logic empty, full);
 
     logic [4:0] put_pointer, get_pointer;
-    logic [63:0] q[0:31];
+    logic [63+1:0] q[0:31];
 
-    assign out = (get & put) ? in : q[get_pointer];
+    assign out = (get & put & empty) ? in[63:0] : q[get_pointer][63:0];
     
-    assign empty =  (put_pointer      == get_pointer);
-    assign full  = ((put_pointer + 1) == get_pointer);
+    always_comb begin
+        if( get &  empty &  put) valid = 1'b1;
+        if( get &  empty & ~put) valid = 1'b0;
+        if( get & ~empty       ) valid = q[get_pointer][64];
+        if(~get                ) valid = 1'b0;
+    end
+    
+    assign empty =   (put_pointer         == get_pointer);
+    assign full  = (((put_pointer + 5'b1) == get_pointer) && (get == 1'b0));
 
     always_ff @(posedge clock) begin
         if(reset) begin
@@ -718,11 +733,14 @@ module Queue
             get_pointer <= '0;
         end else if( get & ~put & ~empty) begin
             get_pointer <= get_pointer + 1;
-        end else if(~get &  put & ~full) begin
+        end else if(~get &  put &  ~full) begin
             put_pointer <= put_pointer + 1;
-        end else if( get &  put) begin
+        end else if( get &  put &  empty) begin
             put_pointer <= put_pointer + 0;
             get_pointer <= get_pointer + 0;
+        end else if( get &  put & ~empty) begin
+            put_pointer <= put_pointer + 1;
+            get_pointer <= get_pointer + 1;
         end
     end
 
@@ -731,7 +749,7 @@ module Queue
         for(i = 0; i < 32; i = i + 1) begin
             if(reset) begin
                 q[i] <= '0;
-            end else if(i == put_pointer && put == 1'b1 && get == 1'b0 && full == 1'b0) begin
+            end else if(i == put_pointer && put == 1'b1 && full == 1'b0) begin
                 q[i] <= in;
             end
         end
@@ -837,7 +855,7 @@ module Keystone_Correction
 
     assign datapath_request.x = current_x_calc;
     assign datapath_request.y = current_y_calc;
-    assign datapath_request.valid = request_calculation;
+    assign datapath_request.valid = request_calculation; // NOT OKAY!!! FIX!!!
 
     Transformation_Datapath d0(.red(r_calc), .green(g_calc), .blue(b_calc),
                                .x_result(x_lookup), 
@@ -864,7 +882,7 @@ module Keystone_Correction
 
     assign ready_out = ready_in;
 
-    enum logic [1:0] {WAIT_FOR_SYNC, WAIT_FOR_READY, MAKE_REQUEST}
+    enum logic [1:0] {WAIT_FOR_SYNC, WAIT_FOR_READY, MAKE_REQUEST, WAIT_FOR_VALID}
         controller_curr_state, controller_next_state;
 
     always_ff @(posedge clock) begin
@@ -874,14 +892,18 @@ module Keystone_Correction
 
     assign last_request = (calculating == ((`WIDTH * `HEIGHT) - 1));
 
+    logic incr;
+
     always_comb begin
+        incr = 1'b0;
         case(controller_curr_state)
             WAIT_FOR_SYNC: begin
                 request_calculation = 1'b0;
                 controller_next_state = (start_of_frame_in) ? MAKE_REQUEST : WAIT_FOR_SYNC;
             end
             MAKE_REQUEST: begin
-                request_calculation = 1'b1;
+                incr = read_done & datapath_ready;
+                request_calculation = datapath_ready;
                 if(last_request) controller_next_state = WAIT_FOR_SYNC;
                 else controller_next_state = (datapath_ready) ? MAKE_REQUEST : WAIT_FOR_READY;
             end
@@ -909,13 +931,13 @@ module Keystone_Correction
                      .reset(reset),
                      .clock(clock),
                      .clear(last_col_done),
-                     .incr(read_done));
+                     .incr(incr));
 
     Counter #(32) yc(.value(current_y_calc),
                      .reset(reset),
                      .clock(clock),
                      .clear(last_row_done),
-                     .incr(last_col_done));
+                     .incr(last_col_done & incr));
                     
     Counter #(32) xi(.value(current_x_input),
                      .reset(reset),
@@ -956,7 +978,8 @@ module Keystone_Correction
     logic queue_empty, queue_full;
 
     Queue q0(.out(pixel_stream_out),
-             .in(output_pixel_packet),
+             .valid(valid_out),
+             .in({datapath_answer.valid,output_pixel_packet}),
              .put(datapath_answer.valid),
              .get(ready_in),
              .empty(queue_empty),
@@ -971,7 +994,6 @@ module Keystone_Correction
     logic last_valid;
     int outputting_x;
 
-    assign valid_out = ~queue_empty | datapath_answer.valid;
     assign start_of_frame_out = (valid_out & ~last_valid);
     assign end_of_line_out = ((valid_out == 1'b1) && (outputting_x == `WIDTH-1));
 
