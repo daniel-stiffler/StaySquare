@@ -262,12 +262,16 @@ def main():
         screen_coors.append((xk_prime, yk_prime))
 
     H = get_homography(proj_coors, screen_coors)
+
+    for val in H.flatten():
+        print int(round(val*16777216))
+
     H_inv = np.linalg.inv(H) # Reverse the mapping for debugging purposes
 
     apply_transformation(H, "new_grad_hdmi.png", width, height)
 
 if __name__ == "__main__":
     # Make printing more reasonable
-    np.set_printoptions(precision=2, threshold=25, suppress=True)
+    np.set_printoptions(precision=19, threshold=25, suppress=True)
 
     main()
