@@ -198,13 +198,13 @@ def apply_transformation(H, fname, width, height):
                 ansb = ansb + "FF\n"
 
     f = open('rtl/r_source.hex','w')
-    f.write(ansr)
+    f.write(srcr)
     f.close()
     f = open('rtl/g_source.hex','w')
-    f.write(ansg)
+    f.write(srcg)
     f.close()
     f = open('rtl/b_source.hex','w')
-    f.write(ansb)
+    f.write(srcb)
     f.close()
 
     print len(ansr.split()), len(ansg.split()), len(ansb.split())
