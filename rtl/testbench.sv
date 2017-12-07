@@ -7,7 +7,8 @@ module top;
     wire         s_axis_video_tready_out;
     logic        s_axis_video_tuser_in;
     logic        s_axis_video_tlast_in;
-    wire  [63:0] s_axis_video_tdata_out;
+    wire  [63:0] s_axis_video_tdata_out; 
+    logic [63:0] last_data;
     wire         s_axis_video_tvalid_out;
     logic        s_axis_video_tready_in;
     wire         s_axis_video_tuser_out;
@@ -48,12 +49,42 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
              .H31(H31),
              .H32(H32));
 
+    
+    logic [7:0] r,g,b;
+        
+    int i;
+    int pixels;
+    
+    always_ff @(posedge aclk) begin
+        if(~aresetn) last_data <= '0;
+        else if(s_axis_video_tvalid_out) last_data <= s_axis_video_tdata_out;
+    end
+    
+    /*
+    assert property ( @(posedge aclk)
+        s_axis_video_tvalid_out |-> 
+        ( (s_axis_video_tdata_out[9:2] == last_data[9:2] + 1) &&
+          (s_axis_video_tdata_out[19:12] == last_data[19:12] - 2) && 
+          (s_axis_video_tdata_out[29:22] == last_data[29:22] - 1)) );
+    */
+    
+    always_comb begin
+        if(s_axis_video_tvalid_out == 1'b1 && s_axis_video_tdata_out != 0) begin
+         
+            if(~( (s_axis_video_tdata_out[9:2] == (last_data[9:2] + 8'd1)) &&
+              (s_axis_video_tdata_out[19:12] == (last_data[19:12] - 8'd2)) && 
+              (s_axis_video_tdata_out[29:22] == (last_data[29:22] - 8'd1))))
+              $display("DATA OUT NOT CORRECT\n");
+        end
+    end
+
     initial begin
         aclk = 1'b0;
         aclken = 1'b1;
         aresetn = 1'b1;
         SW_RESET = 1'b0;
         ENABLE_KEYSTONE = 1'b1;
+        pixels = 0;
 
         H11 = 32'h0100_0000;
         H22 = 32'h0100_0000;
@@ -68,9 +99,16 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         forever #5 aclk = ~aclk;
     end
 
+    always_comb begin
+        s_axis_video_tdata_in = '0;
+        s_axis_video_tdata_in[9:2]   = g;
+        s_axis_video_tdata_in[19:12] = b;
+        s_axis_video_tdata_in[29:22] = r;
+    end
+    
     initial begin
 
-    	$monitor("data_in: %x, valid_in: %b, ready_out: %b, SOF_in: %b, EOL_in: %b\n",
+    	/*$monitor("data_in: %x, valid_in: %b, ready_out: %b, SOF_in: %b, EOL_in: %b\n",
     		 s_axis_video_tdata_in,s_axis_video_tvalid_in,s_axis_video_tready_out,s_axis_video_tuser_in,s_axis_video_tlast_in,
     		     "data_out: %x, valid_out: %b, ready_in: %b, SOF_out: %b, EOL_out: %b\n",
     		 s_axis_video_tdata_out,s_axis_video_tvalid_out,s_axis_video_tready_in,s_axis_video_tuser_out,s_axis_video_tlast_out,
@@ -81,7 +119,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
     		     "pass_count_reported: %d, pass_count_read: %d\n",
     		 dut.ip.c0.pass_count_reported, dut.ip.c0.pass_count_read,
     		     "x_write: %d, y_write: %d, x_read: %d, y_read: %d\n",
-    		 dut.ip.c0.x_write, dut.ip.c0.y_write, dut.ip.c0.x_read, dut.ip.c0.y_read,
+    		 dut.ip.c0.x_write, dut.ip.c0.y_write, dut.ip.c0.x_read, dut.ip.c0.y_read);*//*,
     		     "xw: %x, yw: %x, w: %x\n",
     		 dut.ip.d0.xw, dut.ip.d0.yw, dut.ip.d0.w,
     		     "ax: %x, dx: %x, gx: %x, by: %x, ey: %x, hy: %x\n",
@@ -99,7 +137,15 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
     		     "request_calculation: %b, controller_curr_state: %s\n",
     		 dut.ip.request_calculation, dut.ip.controller_curr_state.name,
     		     "datapath_ready: %b, last_request: %b, ns: %b\n",
-    		 dut.ip.datapath_ready, dut.ip.last_request, dut.ip.controller_curr_state);
+    		 dut.ip.datapath_ready, dut.ip.last_request, dut.ip.controller_curr_state,
+    		     "fractional: %x, div_res: %x, rounded_div_res: %x, dropped: %x, upper: %x, result:%x\n",
+    		 dut.ip.d0.r0.fractional_remainder, dut.ip.d0.r0.div_res, dut.ip.d0.r0.rounded_div_res, dut.ip.d0.r0.dropped, dut.ip.d0.r0.upper, dut.ip.d0.r0.result,
+    		     "a_valid[10]: %x, a_ready[10]: %x, a_data[10]: %x, b_valid[10]: %x, b_ready[10]: %x, b_data[10]: %x\n",
+    		 dut.ip.d0.dh0.d0.a_valid[10], dut.ip.d0.dh0.d0.a_ready[10], dut.ip.d0.dh0.d0.a_data[10], dut.ip.d0.dh0.d0.b_valid[10], dut.ip.d0.dh0.d0.b_ready[10], dut.ip.d0.dh0.d0.b_data[10],
+    		     "out_valid[10]: %x, out_data[10]: %x\n",
+    		 dut.ip.d0.dh0.d0.out_valid[10], dut.ip.d0.dh0.d0.out_data[10],
+    		     "ready_in: %b\n",
+    		 dut.ip.d0.dh0.ready_in);*/
 
         @(posedge aclk);
         @(posedge aclk);
@@ -111,18 +157,74 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         aresetn <= 1'b1;
         @(posedge aclk);
         @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
 
-        s_axis_video_tdata_in  <= 64'hFFFF_FFFF_FFFF_FFFF;
+        {r,g,b} <= 24'hFF_FF_FF;
         s_axis_video_tvalid_in <= 1'b1;
         s_axis_video_tuser_in  <= 1'b1;
         s_axis_video_tlast_in  <= 1'b0;
         s_axis_video_tready_in <= 1'b1;
+        pixels <= pixels + 1;
 
         @(posedge aclk);
 
         s_axis_video_tuser_in <= 1'b0;
+        
+        for(i = 0; i < 5; i = i + 1) begin
+            r <= r - 1;
+            g <= g + 1;
+            b <= b - 2;
+            s_axis_video_tlast_in <= ( (pixels+1) % 1920 == 0);
+            pixels <= pixels + 1;
+            #10;
+        end
+        
+        s_axis_video_tvalid_in <= 1'b0;
+        
+        for(i = 0; i < 5; i = i + 1) begin
+            r <= r - 1;
+            g <= g + 1;
+            b <= b - 2;
+            s_axis_video_tlast_in <= ( (pixels+1) % 1920 == 0);
+            pixels <= pixels + 1;
+            #10;
+        end
+        
+        s_axis_video_tvalid_in <= 1'b1;
+        
+        for(i = 0; i < 5; i = i + 1) begin
+                    r <= r - 1;
+                    g <= g + 1;
+                    b <= b - 2;
+                    s_axis_video_tlast_in <= ( (pixels+1) % 1920 == 0);
+                    pixels <= pixels + 1;
+                    #10;
+                end
+                
+        s_axis_video_tready_in <= 1'b0;
+        
+        for(i = 0; i < 15; i = i + 1) begin
+                    r <= r - 1;
+                    g <= g + 1;
+                    b <= b - 2;
+                    s_axis_video_tlast_in <= ( (pixels+1) % 1920 == 0);
+                    pixels <= pixels + 1;
+                    #10;
+                end
+                
+        s_axis_video_tready_in <= 1'b1;
+        
+        for(i = 0; i < 2073700; i = i + 1) begin
+            r <= r - 1;
+            g <= g + 1;
+            b <= b - 2;
+            s_axis_video_tlast_in <= ( (pixels+1) % 1920 == 0);
+            pixels <= pixels + 1;
+            #10;
+        end
 
-        #10000 $finish;
+        $finish;
     end
 
 endmodule: top

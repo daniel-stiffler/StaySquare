@@ -234,7 +234,7 @@ module BRAM_1024x32_Header(
     .RDEN(RDEN),     // 1-bit input read port enable
     .REGCE(1'b1),    // 1-bit input read output register enable
     .RST(RST),       // 1-bit input reset
-    .WE(4'b0111),    // Input write enable, width defined by write port depth
+    .WE(4'b1111),    // Input write enable, width defined by write port depth
     .WRADDR(WRADDR), // Input write address, width defined by write port depth
     .WRCLK(WRCLK),   // 1-bit input write clock
     .WREN(WREN)      // 1-bit input write port enable

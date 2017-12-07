@@ -4,8 +4,9 @@
 */
 
 `default_nettype none
+
 `define BRAM_ROWS 16
-`define NUM_DIVS 31
+`define NUM_DIVS 33 // 31 div latency + 1 reg latency + 1 extra for spacing
 `define WIDTH 1920
 `define HEIGHT 1080
 `define FIXED_POINT 16
@@ -59,25 +60,11 @@ module Round_to_Coords
     logic [15:0] fractional_remainder;
     int div_res;
     int round_up_div_res;
-    int rounded_div_res;
 
     assign fractional_remainder = value[15:0];
     assign div_res = value[47:16];
     assign round_up_div_res = fractional_remainder[15];
-    assign rounded_div_res = div_res + round_up_div_res;
-
-    ////////////////////////////////////////////////
-    // GRAB AND ROUND INTEGER HALF OF FIXED POINT //
-    ////////////////////////////////////////////////
-
-    logic [`FIXED_POINT-1:0] dropped;
-    int upper;
-    int round_up_upper;
-    
-    assign dropped = rounded_div_res[15:0];
-    assign upper = {{16{rounded_div_res[31]}}, rounded_div_res[31:16]};
-    assign round_up_upper = dropped[15];
-    assign result = upper + round_up_upper;
+    assign result = div_res + round_up_div_res;
 
 endmodule: Round_to_Coords
 
@@ -94,7 +81,7 @@ endmodule: Round_to_Coords
 /////////////////////////////////////////////////////////
 module Divider
    (input wire [31:0] input_A, input_B,
-     input wire  ready_in, valid,
+     input wire  valid, handshake,
      input int   in_pointer, out_pointer,
     output logic [47:0] out,
      input wire clock, reset, enable,
@@ -110,6 +97,7 @@ module Divider
     logic [47:0] out_data[0:`NUM_DIVS - 1];
     
     logic [47:0]  out_data_reg[0:`NUM_DIVS - 1];
+    logic [47:0]  out_valid_reg[0:`NUM_DIVS - 1];
     
     // TODO: Lots of divider handling / storing / clearing logic needed
 
@@ -145,7 +133,7 @@ module Divider
 
         for(i = 0; i < `NUM_DIVS; i = i + 1) begin
 
-            if(i == out_pointer) done = out_valid[out_pointer];
+            if(i == out_pointer) done = out_valid_reg[out_pointer];
 
             if(i == in_pointer) begin
                 a_data[i]  = input_A;
@@ -161,7 +149,7 @@ module Divider
         end
     end
     
-    assign out = out_data[out_pointer];
+    assign out = out_data_reg[out_pointer];
 
     //////////////////////
     // OUTPUT REGISTERS //
@@ -170,12 +158,20 @@ module Divider
     int u;
     always_ff @(posedge clock) begin
         for(u = 0; u < `NUM_DIVS; u = u + 1) begin
-            if(reset)
+            if(reset) begin
                 out_data_reg[u] <= '0;
-            else if(enable & out_valid[u])
+                out_valid_reg[u] <= 1'b0;
+            end else if(enable & out_valid[u]) begin
                 out_data_reg[u] <= out_data[u];
+                out_valid_reg[u] <= 1'b1;
+            end
+            
+            if(handshake == 1'b1 && u == out_pointer)
+                out_valid_reg[u] <= 1'b0;
+            
         end
     end
+
 
 endmodule: Divider
 
@@ -201,10 +197,12 @@ module Divider_Handler
     packet       dest_pixel_in_reg[0:`NUM_DIVS - 1];
     logic        done_0, done_1;
     logic        enable;
+    logic        handshake;
     
     assign enable = 1'b1;
+    assign handshake = enable & ready_in & done;
 
-    assign done = (done_0 & done_1); // TODO: this is only one cycle but needs to be more...
+    assign done = (done_0 & done_1);
 
     //////////////
     // DIVIDERS //
@@ -212,8 +210,8 @@ module Divider_Handler
 
     Divider d0 (.input_A(input_A_0), 
                 .input_B(input_B_0),
-                .ready_in(ready_in), 
                 .valid(dest_pixel_in.valid),
+                .handshake(handshake),
                 .in_pointer(in_pointer), 
                 .out_pointer(out_pointer),
                 .out(out_0),
@@ -224,8 +222,8 @@ module Divider_Handler
 
     Divider d1 (.input_A(input_A_1), 
                 .input_B(input_B_1),
-                .ready_in(ready_in), 
                 .valid(dest_pixel_in.valid),
+                .handshake(handshake),
                 .in_pointer(in_pointer), 
                 .out_pointer(out_pointer),
                 .out(out_1),
@@ -250,9 +248,9 @@ module Divider_Handler
     always_ff @(posedge clock) begin
             if(reset)
                 out_pointer <= 0;
-            else if(out_pointer == `NUM_DIVS-1 && ready_in == 1'b1) 
+            else if(out_pointer == `NUM_DIVS-1 && ready_in == 1'b1)
                 out_pointer <= 0;
-            else if(ready_in)
+            else if(ready_in & done)
                 out_pointer <= out_pointer + 1;
     end
 
@@ -260,7 +258,10 @@ module Divider_Handler
     // DEST LOCATION REGS //
     ////////////////////////
 
-    assign dest_pixel_out = dest_pixel_in_reg[out_pointer];
+    always_comb begin
+        dest_pixel_out = dest_pixel_in_reg[out_pointer];
+        dest_pixel_out.valid = done;
+    end
     
     int v;
     always_ff @(posedge clock) begin
@@ -292,20 +293,20 @@ module Multiplier_Handler
      input wire request,
     output logic done);
 
-    logic req_1, req_2, req_3, req_4, req_5;
+    logic req_1, req_2, req_3, req_4, req_5, req_6;
     logic enable;
     
     assign enable = 1'b1;
 
     mult_gen_0 m(.CLK(clock), .CE(enable), .A(A), .B(B), .P(P));
 
-    assign done = req_5;
+    assign done = req_6;
 
     // Delay request by 5 cycles to indicate end of 6 stage pipeline
     always_ff @(posedge clock) begin
         if(reset) begin
         
-            {req_1,req_2,req_3,req_4,req_5} <= 5'b00000;
+            {req_1,req_2,req_3,req_4,req_5,req_6} <= 6'b000000;
             
         end else if (enable) begin
         
@@ -314,6 +315,7 @@ module Multiplier_Handler
             req_3 <= req_2;
             req_4 <= req_3;
             req_5 <= req_4;
+            req_6 <= req_5;
             
         end
     end
@@ -342,6 +344,8 @@ module Transformation_Datapath
    output wire        read_request,
     input wire        read_done,
     input wire        clock, reset);
+    
+    assign ready_out = 1'b1;
 
     ////////////////////////////////////////////
     // CALCULATE COORDINATES FOR COLOR LOOKUP //
@@ -357,7 +361,7 @@ module Transformation_Datapath
     logic        done_ey, done_gx, done_hy;
 
     packet dest_pixel_1, dest_pixel_2, dest_pixel_3;
-    packet dest_pixel_4, dest_pixel_5;
+    packet dest_pixel_4, dest_pixel_5, dest_pixel_6;
     packet dest_pixel_from_mults, dest_pixel_out_divs;
 
     assign x = dest_pixel_in.x;
@@ -367,7 +371,7 @@ module Transformation_Datapath
     // MULTIPLIERS FOR VECTOR MATRIX MULTIPLY //
     ////////////////////////////////////////////
 
-    assign dest_pixel_from_mults = dest_pixel_5;
+    assign dest_pixel_from_mults = dest_pixel_6;
 
     Multiplier_Handler m0(.clock(clock),
                           .reset(reset),
@@ -424,12 +428,14 @@ module Transformation_Datapath
             dest_pixel_3 <= '{x:'0,y:'0,valid:'0};
             dest_pixel_4 <= '{x:'0,y:'0,valid:'0};
             dest_pixel_5 <= '{x:'0,y:'0,valid:'0};
+            dest_pixel_6 <= '{x:'0,y:'0,valid:'0};
         end else begin
             dest_pixel_1 <= dest_pixel_in;
             dest_pixel_2 <= dest_pixel_1;
             dest_pixel_3 <= dest_pixel_2;
             dest_pixel_4 <= dest_pixel_3;
             dest_pixel_5 <= dest_pixel_4;
+            dest_pixel_6 <= dest_pixel_5;
         end
     end
 
@@ -439,7 +445,7 @@ module Transformation_Datapath
 
     assign xw = ax + by + {{32{c[31]}},c};
     assign yw = dx + ey + {{32{f[31]}},f};
-    assign  w = gx + hy + 64'd1;
+    assign  w = gx + hy + 64'h0000000001_000000; // Fixed-point 1
 
     ///////////////////////////////////////////
     // DIVIDERS FOR HOMOGENOUS NORMALIZATION //
@@ -593,8 +599,6 @@ module Input_BRAM_Controller
     
     always_comb begin
     
-        read_value = '0;
-    
         for (row = 0; row < `BRAM_ROWS; row = row + 1) begin
             for (col = 0; col < 2; col = col + 1) begin
             
@@ -603,16 +607,31 @@ module Input_BRAM_Controller
                     data_in[row][col] = write_value;
                     write_addr[row][col] = {22'b0,pos_bram_write};
                     write_en[row][col] = write_request;
+
+                end else begin
+                
+                    data_in[row][col] = '0;
+                    write_addr[row][col] = '0;
+                    write_en[row][col] = 1'b0;
+                    
+                end
+            end
+        end
+        
+        read_value = '0;
+    
+        for (row = 0; row < `BRAM_ROWS; row = row + 1) begin
+            for (col = 0; col < 2; col = col + 1) begin
+            
+                if(row == bram_row_read && col == bram_col_read) begin
+                
                     read_addr[row][col] = {22'b0,pos_bram_read};
                     read_en[row][col] = read_request;
                     
                     read_value = data_out[row][col];
                     
                 end else begin
-                
-                    data_in[row][col] = '0;
-                    write_addr[row][col] = '0;
-                    write_en[row][col] = 1'b0;
+               
                     read_addr[row][col] = '0;
                     read_en[row][col] = 1'b0;
                     
@@ -621,9 +640,9 @@ module Input_BRAM_Controller
         end
         
         pass_count_reported = read_value[31:24];
-        
+          
     end
-
+    
     //////////////////
     // PIXEL VALUES //
     //////////////////
@@ -700,8 +719,8 @@ module Queue
         end else if(~get &  put & ~full) begin
             put_pointer <= put_pointer + 1;
         end else if( get &  put) begin
-            put_pointer <= put_pointer + 1;
-            get_pointer <= get_pointer + 1;
+            put_pointer <= put_pointer + 0;
+            get_pointer <= get_pointer + 0;
         end
     end
 
@@ -778,9 +797,12 @@ module Keystone_Correction
     assign b_in = pixel_stream_in[19:12];
     assign r_in = pixel_stream_in[29:22];
 
-    assign output_pixel_packet[9:2]   = g_calc;
-    assign output_pixel_packet[19:12] = b_calc;
-    assign output_pixel_packet[29:22] = r_calc;    
+    always_comb begin
+        output_pixel_packet = '0;
+        output_pixel_packet[9:2]   = g_calc;
+        output_pixel_packet[19:12] = b_calc;
+        output_pixel_packet[29:22] = r_calc;
+    end  
 
     //////////////////////////////////
     // RAM HANDLER FOR INPUT BUFFER //
@@ -789,22 +811,22 @@ module Keystone_Correction
     assign done_dest_frame = ( (datapath_answer.x ==  (`WIDTH-1)) &&
                                (datapath_answer.y == (`HEIGHT-1)) );
 
-    Input_BRAM_Controller c0(.r_out(r_out_from_bram), 
-                             .g_out(g_out_from_bram), 
+    Input_BRAM_Controller c0(.r_out(r_out_from_bram),
+                             .g_out(g_out_from_bram),
                              .b_out(b_out_from_bram),
-                             .valid_coords(valid_coords), 
+                             .valid_coords(valid_coords),
                              .done(read_done),
-                             .x_write(current_x_input), 
+                             .x_write(current_x_input),
                              .y_write(current_y_input),
-                             .x_read(x_lookup), 
+                             .x_read(x_lookup),
                              .y_read(y_lookup),
-                             .r_in(r_in), 
-                             .g_in(g_in), 
+                             .r_in(r_in),
+                             .g_in(g_in),
                              .b_in(b_in),
                              .write_request(valid_in), 
                              .read_request(datapath_read_request),
-                             .reset(reset), 
-                             .clock(clock), 
+                             .reset(reset),
+                             .clock(clock),
                              .done_dest_frame(done_dest_frame));
 
     /////////////////////////////////////
@@ -947,7 +969,7 @@ module Keystone_Correction
     logic last_valid;
     int outputting_x;
 
-    assign valid_out = ~queue_empty;
+    assign valid_out = ~queue_empty | datapath_answer.valid;
     assign start_of_frame_out = (valid_out & ~last_valid);
     assign end_of_line_out = ((valid_out == 1'b1) && (outputting_x == `WIDTH-1));
 
