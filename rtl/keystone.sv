@@ -6,7 +6,7 @@
 `default_nettype none
 
 `define BRAM_ROWS 16
-`define NUM_DIVS 33 // 31 div latency + 1 reg latency + 1 extra for spacing
+`define NUM_DIVS 32 // 31 div latency + 1 reg latency + 0 extra for spacing
 `define WIDTH 1920
 `define HEIGHT 1080
 `define FIXED_POINT 16
@@ -97,7 +97,7 @@ module Divider
     logic [47:0] out_data[0:`NUM_DIVS - 1];
     
     logic [47:0]  out_data_reg[0:`NUM_DIVS - 1];
-    logic [47:0]  out_valid_reg[0:`NUM_DIVS - 1];
+    logic         out_valid_reg[0:`NUM_DIVS - 1];
     
     // TODO: Lots of divider handling / storing / clearing logic needed
 
@@ -189,16 +189,18 @@ module Divider_Handler
      input packet dest_pixel_in,
      input wire  ready_in,
     output logic [47:0] out_0, out_1,
+    output logic ready_out,
     output packet dest_pixel_out,
      input wire clock, reset,
     output logic done);
 
-    int          in_pointer, out_pointer;
+    logic [4:0]  in_pointer, out_pointer;
     packet       dest_pixel_in_reg[0:`NUM_DIVS - 1];
     logic        done_0, done_1;
     logic        enable;
     logic        handshake;
     
+    assign ready_out = (in_pointer + 5'b1) != out_pointer;
     assign enable = 1'b1;
     assign handshake = enable & ready_in & done;
 
@@ -238,20 +240,20 @@ module Divider_Handler
 
     always_ff @(posedge clock) begin
         if(reset)
-            in_pointer <= 0;
+            in_pointer <= '0;
         else if(in_pointer == `NUM_DIVS-1 && dest_pixel_in.valid == 1'b1) 
-            in_pointer <= 0;
-        else if(dest_pixel_in.valid)
-            in_pointer <= in_pointer + 1;
+            in_pointer <= '0;
+        else if(dest_pixel_in.valid & ready_out)
+            in_pointer <= in_pointer + 5'b1;
     end
     
     always_ff @(posedge clock) begin
             if(reset)
-                out_pointer <= 0;
+                out_pointer <= '0;
             else if(out_pointer == `NUM_DIVS-1 && ready_in == 1'b1)
-                out_pointer <= 0;
+                out_pointer <= '0;
             else if(ready_in & done)
-                out_pointer <= out_pointer + 1;
+                out_pointer <= out_pointer + 5'b1;
     end
 
     ////////////////////////
@@ -268,7 +270,7 @@ module Divider_Handler
         for(v = 0; v < `NUM_DIVS; v = v + 1) begin
             if(reset) begin
                 dest_pixel_in_reg[v] = '{x:'0, y:'0, valid:'0};
-            end else if(in_pointer == v && enable == 1'b1) begin
+            end else if(in_pointer == v && enable == 1'b1 && ready_out == 1'b1) begin
                 dest_pixel_in_reg[v] <= dest_pixel_in;
             end
         end
@@ -291,12 +293,13 @@ module Multiplier_Handler
     output logic [63:0] P, 
      input wire [31:0] A, B,
      input wire request,
-    output logic done);
+    output logic done,
+     input wire ready_in);
 
     logic req_1, req_2, req_3, req_4, req_5, req_6;
     logic enable;
     
-    assign enable = 1'b1;
+    assign enable = ready_in;
 
     mult_gen_0 m(.CLK(clock), .CE(enable), .A(A), .B(B), .P(P));
 
@@ -338,7 +341,7 @@ module Transformation_Datapath
     input wire        ready_in,
     input packet      dest_pixel_in,
    output packet      dest_pixel_out,
-    input int         a, b, c, d, e, f, g, h,
+    input int         a, b, c, d, e, f, g, h, i,
     input wire  [7:0] r_source, g_source, b_source,
     input wire        valid_coords,
    output wire        read_request,
@@ -354,18 +357,27 @@ module Transformation_Datapath
     logic [63:0] ax, by, dx, ey, gx, hy;
     logic [63:0] xw, yw, w;
     logic [47:0] x_norm, y_norm;
-    int          x, y;
+    int          x, y, x_in, y_in;
     int          x_round, y_round;
     logic        div_done;
     logic        done_ax, done_by, done_dx;
     logic        done_ey, done_gx, done_hy;
+    
+    logic ready_out_from_divs;
 
     packet dest_pixel_1, dest_pixel_2, dest_pixel_3;
     packet dest_pixel_4, dest_pixel_5, dest_pixel_6;
-    packet dest_pixel_from_mults, dest_pixel_out_divs;
+    packet dest_pixel_from_mults, dest_pixel_out_divs, dest_pixel_out_divs_reg;
 
-    assign x = dest_pixel_in.x;
-    assign y = dest_pixel_in.y;
+    assign x_in = dest_pixel_in.x;
+    assign y_in = dest_pixel_in.y;
+    
+    ///////////////////////////
+    // COORDINATE CONVERSION //
+    ///////////////////////////
+    
+    assign x = x_in -  `WIDTH / 2;
+    assign y = y_in - `HEIGHT / 2;
 
     ////////////////////////////////////////////
     // MULTIPLIERS FOR VECTOR MATRIX MULTIPLY //
@@ -379,7 +391,8 @@ module Transformation_Datapath
                           .A(a),
                           .B(x),
                           .request(dest_pixel_in.valid),
-                          .done(done_ax));
+                          .done(done_ax),
+                          .ready_in(ready_out_from_divs));
 
     Multiplier_Handler m1(.clock(clock),
                           .reset(reset),
@@ -387,7 +400,8 @@ module Transformation_Datapath
                           .A(b),
                           .B(y),
                           .request(dest_pixel_in.valid),
-                          .done(done_by));
+                          .done(done_by),
+                          .ready_in(ready_out_from_divs));
 
     Multiplier_Handler m2(.clock(clock),
                           .reset(reset),
@@ -395,7 +409,8 @@ module Transformation_Datapath
                           .A(d),
                           .B(x),
                           .request(dest_pixel_in.valid),
-                          .done(done_dx));
+                          .done(done_dx),
+                          .ready_in(ready_out_from_divs));
 
     Multiplier_Handler m3(.clock(clock),
                           .reset(reset),
@@ -403,7 +418,8 @@ module Transformation_Datapath
                           .A(e),
                           .B(y),
                           .request(dest_pixel_in.valid),
-                          .done(done_ey));
+                          .done(done_ey),
+                          .ready_in(ready_out_from_divs));
 
     Multiplier_Handler m4(.clock(clock),
                           .reset(reset),
@@ -411,7 +427,8 @@ module Transformation_Datapath
                           .A(g),
                           .B(x),
                           .request(dest_pixel_in.valid),
-                          .done(done_gx));
+                          .done(done_gx),
+                          .ready_in(ready_out_from_divs));
 
     Multiplier_Handler m5(.clock(clock),
                           .reset(reset),
@@ -419,7 +436,8 @@ module Transformation_Datapath
                           .A(h),
                           .B(y),
                           .request(dest_pixel_in.valid),
-                          .done(done_hy));
+                          .done(done_hy),
+                          .ready_in(ready_out_from_divs));
 
     always_ff @(posedge clock) begin
         if(reset) begin
@@ -429,7 +447,7 @@ module Transformation_Datapath
             dest_pixel_4 <= '{x:'0,y:'0,valid:'0};
             dest_pixel_5 <= '{x:'0,y:'0,valid:'0};
             dest_pixel_6 <= '{x:'0,y:'0,valid:'0};
-        end else begin
+        end else if(ready_out_from_divs) begin
             dest_pixel_1 <= dest_pixel_in;
             dest_pixel_2 <= dest_pixel_1;
             dest_pixel_3 <= dest_pixel_2;
@@ -445,7 +463,7 @@ module Transformation_Datapath
 
     assign xw = ax + by + {{32{c[31]}},c};
     assign yw = dx + ey + {{32{f[31]}},f};
-    assign  w = gx + hy + 64'h0000000001_000000; // Fixed-point 1
+    assign  w = gx + hy + {{32{i[31]}},i}; // 64'h0000000001_000000; // Fixed-point 1
 
     ///////////////////////////////////////////
     // DIVIDERS FOR HOMOGENOUS NORMALIZATION //
@@ -456,6 +474,7 @@ module Transformation_Datapath
                         .input_A_1(yw[`FIXED_POINT/2+`INT_SIZE-1:`FIXED_POINT/2]),
                         .input_B_1(w[`FIXED_POINT/2+`INT_SIZE-1:`FIXED_POINT/2]),
                         .dest_pixel_in(dest_pixel_from_mults),
+                        .ready_out(ready_out_from_divs),
                         .out_0(x_norm),
                         .out_1(y_norm),
                         .done(div_done),
@@ -474,12 +493,12 @@ module Transformation_Datapath
     Round_to_Coords r1(.result(y_round),
                        .value(y_norm));
 
-    //////////////////////////////////////
-    // ADDERS FOR COORDINATE ADJUSTMENT //
-    //////////////////////////////////////
+    ////////////////////////
+    // COORDINATE RESTORE //
+    ////////////////////////
 
-    assign x_result = x_round + 0; // `WIDTH / 2;
-    assign y_result = y_round + 0; // `HEIGHT / 2;
+    assign x_result = x_round +  `WIDTH / 2;
+    assign y_result = y_round + `HEIGHT / 2;
 
     ////////////////////
     // MEMORY HANDLER //
@@ -499,13 +518,15 @@ module Transformation_Datapath
             r_source_reg <= '0;
             g_source_reg <= '0;
             b_source_reg <= '0;
+            dest_pixel_out_divs_reg <= '{x:'0, y:'0, valid:'0};
             dest_pixel_out <= '{x:'0, y:'0, valid:'0};
             valid_coords_reg <= '0;
-        end else begin
+        end else if(read_done) begin
             r_source_reg <= r_source;
             g_source_reg <= g_source;
             b_source_reg <= b_source;
-            dest_pixel_out <= dest_pixel_out_divs;
+            dest_pixel_out_divs_reg <= dest_pixel_out_divs;
+            dest_pixel_out <= dest_pixel_out_divs_reg;
             valid_coords_reg <= valid_coords;
         end
     end
@@ -653,7 +674,7 @@ module Input_BRAM_Controller
             g_out = read_value[15: 8];
             b_out = read_value[ 7: 0];
             done  = (((x_read < x_write) && (y_read == y_write)) 
-                                         || (y_read  < y_write));
+                                         || (y_read  < y_write)) || (read_request == 1'b0);
         end else begin // hot pink
             r_out = 8'hFF;
             g_out = 8'h1E;
@@ -696,19 +717,27 @@ endmodule: Input_BRAM_Controller
 //                                             //
 /////////////////////////////////////////////////
 module Queue
-  (output logic [63:0] out,
-    input wire  [63:0] in,
+  (output logic [63+1:0] out,
+   output logic valid,
+    input wire  [63+1:0] in,
     input wire  put, get,
     input wire  clock, reset,
    output logic empty, full);
 
     logic [4:0] put_pointer, get_pointer;
-    logic [63:0] q[0:31];
+    logic [63+1:0] q[0:31];
 
-    assign out = q[get_pointer];
+    assign out = (get & put & empty) ? in[63:0] : q[get_pointer][63:0];
     
-    assign empty =  (put_pointer      == get_pointer);
-    assign full  = ((put_pointer + 1) == get_pointer);
+    always_comb begin
+        if( get &  empty &  put) valid = 1'b1;
+        if( get &  empty & ~put) valid = 1'b0;
+        if( get & ~empty       ) valid = q[get_pointer][64];
+        if(~get                ) valid = 1'b0;
+    end
+    
+    assign empty =   (put_pointer         == get_pointer);
+    assign full  = (((put_pointer + 5'b1) == get_pointer) && (get == 1'b0));
 
     always_ff @(posedge clock) begin
         if(reset) begin
@@ -716,11 +745,14 @@ module Queue
             get_pointer <= '0;
         end else if( get & ~put & ~empty) begin
             get_pointer <= get_pointer + 1;
-        end else if(~get &  put & ~full) begin
+        end else if(~get &  put &  ~full) begin
             put_pointer <= put_pointer + 1;
-        end else if( get &  put) begin
+        end else if( get &  put &  empty) begin
             put_pointer <= put_pointer + 0;
             get_pointer <= get_pointer + 0;
+        end else if( get &  put & ~empty) begin
+            put_pointer <= put_pointer + 1;
+            get_pointer <= get_pointer + 1;
         end
     end
 
@@ -729,7 +761,7 @@ module Queue
         for(i = 0; i < 32; i = i + 1) begin
             if(reset) begin
                 q[i] <= '0;
-            end else if(i == put_pointer && put == 1'b1) begin
+            end else if(i == put_pointer && put == 1'b1 && full == 1'b0) begin
                 q[i] <= in;
             end
         end
@@ -764,7 +796,7 @@ module Keystone_Correction
 // INPUT AXI LITE //
 ////////////////////
     input wire clock, clock_en, reset,
-    input wire [31:0] H11,H12,H13,H21,H22,H23,H31,H32);
+    input wire [31:0] H11,H12,H13,H21,H22,H23,H31,H32,H33);
 
     //////////////////////
     // INTERNAL SIGNALS //
@@ -785,7 +817,7 @@ module Keystone_Correction
     int   current_x_calc, current_y_calc;
     int   done_pix_loc_x, done_pix_loc_y;
 
-    int a,b,c,d,e,f,g,h;
+    int a,b,c,d,e,f,g,h,i;
 
     packet datapath_request, datapath_answer;
 
@@ -835,7 +867,7 @@ module Keystone_Correction
 
     assign datapath_request.x = current_x_calc;
     assign datapath_request.y = current_y_calc;
-    assign datapath_request.valid = request_calculation;
+    assign datapath_request.valid = request_calculation; // NOT OKAY!!! FIX!!!
 
     Transformation_Datapath d0(.red(r_calc), .green(g_calc), .blue(b_calc),
                                .x_result(x_lookup), 
@@ -846,7 +878,7 @@ module Keystone_Correction
                                .dest_pixel_out(datapath_answer),
                                .a(a), .b(b), .c(c), 
                                .d(d), .e(e), .f(f), 
-                               .g(g), .h(h),
+                               .g(g), .h(h), .i(i),
                                .r_source(r_out_from_bram),
                                .g_source(g_out_from_bram),
                                .b_source(b_out_from_bram),
@@ -862,7 +894,7 @@ module Keystone_Correction
 
     assign ready_out = ready_in;
 
-    enum logic [1:0] {WAIT_FOR_SYNC, WAIT_FOR_READY, MAKE_REQUEST}
+    enum logic [1:0] {WAIT_FOR_SYNC, WAIT_FOR_READY, MAKE_REQUEST, WAIT_FOR_VALID}
         controller_curr_state, controller_next_state;
 
     always_ff @(posedge clock) begin
@@ -872,14 +904,18 @@ module Keystone_Correction
 
     assign last_request = (calculating == ((`WIDTH * `HEIGHT) - 1));
 
+    logic incr;
+
     always_comb begin
+        incr = 1'b0;
         case(controller_curr_state)
             WAIT_FOR_SYNC: begin
                 request_calculation = 1'b0;
                 controller_next_state = (start_of_frame_in) ? MAKE_REQUEST : WAIT_FOR_SYNC;
             end
             MAKE_REQUEST: begin
-                request_calculation = 1'b1;
+                incr = read_done & datapath_ready;
+                request_calculation = datapath_ready;
                 if(last_request) controller_next_state = WAIT_FOR_SYNC;
                 else controller_next_state = (datapath_ready) ? MAKE_REQUEST : WAIT_FOR_READY;
             end
@@ -907,13 +943,13 @@ module Keystone_Correction
                      .reset(reset),
                      .clock(clock),
                      .clear(last_col_done),
-                     .incr(read_done));
+                     .incr(incr));
 
     Counter #(32) yc(.value(current_y_calc),
                      .reset(reset),
                      .clock(clock),
                      .clear(last_row_done),
-                     .incr(last_col_done));
+                     .incr(last_col_done & incr));
                     
     Counter #(32) xi(.value(current_x_input),
                      .reset(reset),
@@ -936,13 +972,13 @@ module Keystone_Correction
 
             a <= 0; b <= 0; c <= 0;
             d <= 0; e <= 0; f <= 0;
-            g <= 0; h <= 0;
+            g <= 0; h <= 0; i <= 0;
 
         end else if(start_of_frame_in) begin
 
             a <= H11; b <= H12; c <= H13;
             d <= H21; e <= H22; f <= H23;
-            g <= H31; h <= H32;
+            g <= H31; h <= H32; i <= H33;
 
         end
     end
@@ -954,7 +990,8 @@ module Keystone_Correction
     logic queue_empty, queue_full;
 
     Queue q0(.out(pixel_stream_out),
-             .in(output_pixel_packet),
+             .valid(valid_out),
+             .in({datapath_answer.valid,output_pixel_packet}),
              .put(datapath_answer.valid),
              .get(ready_in),
              .empty(queue_empty),
@@ -969,7 +1006,6 @@ module Keystone_Correction
     logic last_valid;
     int outputting_x;
 
-    assign valid_out = ~queue_empty | datapath_answer.valid;
     assign start_of_frame_out = (valid_out & ~last_valid);
     assign end_of_line_out = ((valid_out == 1'b1) && (outputting_x == `WIDTH-1));
 

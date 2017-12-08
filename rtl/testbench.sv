@@ -24,6 +24,7 @@ module top;
     logic [`C_S_AXI_DATA_WIDTH-1 : 0] H23;
     logic [`C_S_AXI_DATA_WIDTH-1 : 0] H31;
     logic [`C_S_AXI_DATA_WIDTH-1 : 0] H32;
+    logic [`C_S_AXI_DATA_WIDTH-1 : 0] H33;
 
 Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
              .s_axis_video_tvalid_in(s_axis_video_tvalid_in),
@@ -47,17 +48,19 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
              .H22(H22),
              .H23(H23),
              .H31(H31),
-             .H32(H32));
+             .H32(H32),
+             .H33(H33));
 
     
     logic [7:0] r,g,b;
         
     int i;
-    int pixels;
+    int pixels, pixels_out;
+    logic correct, correct_reg;
     
     always_ff @(posedge aclk) begin
-        if(~aresetn) last_data <= '0;
-        else if(s_axis_video_tvalid_out) last_data <= s_axis_video_tdata_out;
+        if(~aresetn) correct_reg <= '0;
+        else if(s_axis_video_tvalid_out) correct_reg <= correct;
     end
     
     /*
@@ -69,41 +72,97 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
     */
     
     always_comb begin
-        if(s_axis_video_tvalid_out == 1'b1 && s_axis_video_tdata_out != 0) begin
+    correct = 1'b1;
+        if(s_axis_video_tvalid_out == 1'b1) begin
          
-            if(~( (s_axis_video_tdata_out[9:2] == (last_data[9:2] + 8'd1)) &&
-              (s_axis_video_tdata_out[19:12] == (last_data[19:12] - 8'd2)) && 
-              (s_axis_video_tdata_out[29:22] == (last_data[29:22] - 8'd1))))
-              $display("DATA OUT NOT CORRECT\n");
+            if(s_axis_video_tready_in == 1'b1 && 
+               s_axis_video_tdata_out != answer[pixels_out])
+               
+                correct = 1'b0;
+  
+            $strobe("out: %x ans: %x",s_axis_video_tdata_out,source[pixels_out]);
+            
+            
+            if(~correct_reg) $strobe("DATA OUT NOT CORRECT >:(");
+        end
+        
+    end
+    
+    logic [7:0] r_source[0:2073599];
+    logic [7:0] g_source[0:2073599];
+    logic [7:0] b_source[0:2073599];
+    logic [7:0] r_answer[0:2073599];
+    logic [7:0] g_answer[0:2073599];
+    logic [7:0] b_answer[0:2073599];
+    logic [63:0] source[0:2073599];
+    logic [63:0] answer[0:2073599];
+    
+    int m;
+    always_comb begin
+        for(m = 0; m < 2073600; m = m + 1) begin
+        
+            source[m][63: 0] = '0;
+            source[m][ 9: 2] = g_source[m]; 
+            source[m][19:12] = b_source[m]; 
+            source[m][29:22] = r_source[m]; 
+            
+            answer[m][63: 0] = '0;
+            answer[m][ 9: 2] = g_answer[m]; 
+            answer[m][19:12] = b_answer[m]; 
+            answer[m][29:22] = r_answer[m]; 
+            
         end
     end
 
     initial begin
+        $readmemh("r_source.hex", r_source);
+        $readmemh("g_source.hex", g_source);
+        $readmemh("b_source.hex", b_source);
+        $readmemh("r_answer.hex", r_answer);
+        $readmemh("g_answer.hex", g_answer);
+        $readmemh("b_answer.hex", b_answer);
         aclk = 1'b0;
         aclken = 1'b1;
         aresetn = 1'b1;
         SW_RESET = 1'b0;
         ENABLE_KEYSTONE = 1'b1;
         pixels = 0;
-
+        
+        /*
         H11 = 32'h0100_0000;
         H22 = 32'h0100_0000;
-
         H12 = 32'h0;
         H13 = 32'h0;
         H21 = 32'h0;
         H23 = 32'h0;
         H31 = 32'h0;
         H32 = 32'h0;
-
+        */
+        
+        H11 = 32'b100101010111101011011111;
+        H12 = 32'b0;
+        H13 = 32'b11111101;
+        H21 = 32'b0;
+        H22 = 32'b100100000110001011110110;
+        H23 = 32'b11;
+        H31 = 32'b0;
+        H32 = 32'b11111111111111111111011000011001;
+        H33 = 32'b100101010111101011011111;
+        
         forever #5 aclk = ~aclk;
     end
 
     always_comb begin
         s_axis_video_tdata_in = '0;
-        s_axis_video_tdata_in[9:2]   = g;
-        s_axis_video_tdata_in[19:12] = b;
-        s_axis_video_tdata_in[29:22] = r;
+        s_axis_video_tdata_in[9:2]   = g_source[pixels-1];
+        s_axis_video_tdata_in[19:12] = b_source[pixels-1];
+        s_axis_video_tdata_in[29:22] = r_source[pixels-1];
+    end
+    
+    always_ff @(posedge aclk) begin
+        if(~aresetn) pixels_out <= 0;
+        else if(s_axis_video_tvalid_out & 
+                s_axis_video_tready_in) pixels_out <= pixels_out + 1;
     end
     
     initial begin
@@ -160,7 +219,6 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         @(posedge aclk);
         @(posedge aclk);
 
-        {r,g,b} <= 24'hFF_FF_FF;
         s_axis_video_tvalid_in <= 1'b1;
         s_axis_video_tuser_in  <= 1'b1;
         s_axis_video_tlast_in  <= 1'b0;
@@ -171,7 +229,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
 
         s_axis_video_tuser_in <= 1'b0;
         
-        for(i = 0; i < 5; i = i + 1) begin
+        for(i = 0; i < 50; i = i + 1) begin
             r <= r - 1;
             g <= g + 1;
             b <= b - 2;
@@ -180,9 +238,9 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
             #10;
         end
         
-        s_axis_video_tvalid_in <= 1'b0;
+        //s_axis_video_tvalid_in <= 1'b0;
         
-        for(i = 0; i < 5; i = i + 1) begin
+        for(i = 0; i < 50; i = i + 1) begin
             r <= r - 1;
             g <= g + 1;
             b <= b - 2;
@@ -193,7 +251,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         
         s_axis_video_tvalid_in <= 1'b1;
         
-        for(i = 0; i < 5; i = i + 1) begin
+        for(i = 0; i < 50; i = i + 1) begin
                     r <= r - 1;
                     g <= g + 1;
                     b <= b - 2;
@@ -204,7 +262,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
                 
         s_axis_video_tready_in <= 1'b0;
         
-        for(i = 0; i < 15; i = i + 1) begin
+        for(i = 0; i < 50; i = i + 1) begin
                     r <= r - 1;
                     g <= g + 1;
                     b <= b - 2;
