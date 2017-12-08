@@ -24,6 +24,7 @@ module top;
     logic [`C_S_AXI_DATA_WIDTH-1 : 0] H23;
     logic [`C_S_AXI_DATA_WIDTH-1 : 0] H31;
     logic [`C_S_AXI_DATA_WIDTH-1 : 0] H32;
+    logic [`C_S_AXI_DATA_WIDTH-1 : 0] H33;
 
 Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
              .s_axis_video_tvalid_in(s_axis_video_tvalid_in),
@@ -47,7 +48,8 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
              .H22(H22),
              .H23(H23),
              .H31(H31),
-             .H32(H32));
+             .H32(H32),
+             .H33(H33));
 
     
     logic [7:0] r,g,b;
@@ -74,7 +76,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         if(s_axis_video_tvalid_out == 1'b1) begin
          
             if(s_axis_video_tready_in == 1'b1 && 
-               s_axis_video_tdata_out != source[pixels_out])
+               s_axis_video_tdata_out != answer[pixels_out])
                
                 correct = 1'b0;
   
@@ -116,9 +118,9 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         $readmemh("r_source.hex", r_source);
         $readmemh("g_source.hex", g_source);
         $readmemh("b_source.hex", b_source);
-        $readmemh("r_source.hex", r_answer);
-        $readmemh("g_source.hex", g_answer);
-        $readmemh("b_source.hex", b_answer);
+        $readmemh("r_answer.hex", r_answer);
+        $readmemh("g_answer.hex", g_answer);
+        $readmemh("b_answer.hex", b_answer);
         aclk = 1'b0;
         aclken = 1'b1;
         aresetn = 1'b1;
@@ -126,16 +128,27 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         ENABLE_KEYSTONE = 1'b1;
         pixels = 0;
         
+        /*
         H11 = 32'h0100_0000;
         H22 = 32'h0100_0000;
-
         H12 = 32'h0;
         H13 = 32'h0;
         H21 = 32'h0;
         H23 = 32'h0;
         H31 = 32'h0;
         H32 = 32'h0;
-
+        */
+        
+        H11 = 32'b100101010111101011011111;
+        H12 = 32'b0;
+        H13 = 32'b11111101;
+        H21 = 32'b0;
+        H22 = 32'b100100000110001011110110;
+        H23 = 32'b11;
+        H31 = 32'b0;
+        H32 = 32'b11111111111111111111011000011001;
+        H33 = 32'b100101010111101011011111;
+        
         forever #5 aclk = ~aclk;
     end
 

@@ -33,7 +33,8 @@ module Keystone
     input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H22,
     input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H23,
     input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H31,
-    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H32
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H32,
+    input wire [`C_S_AXI_DATA_WIDTH-1 : 0] H33
     );
 
     Keystone_Correction ip(.pixel_stream_out(s_axis_video_tdata_out),
@@ -51,6 +52,6 @@ module Keystone
                            .reset(~aresetn | SW_RESET),
                            .H11(H11), .H12(H12), .H13(H13),
                            .H21(H21), .H22(H22), .H23(H23),
-                           .H31(H31), .H32(H32));
+                           .H31(H31), .H32(H32), .H33(H33));
 
 endmodule: Keystone

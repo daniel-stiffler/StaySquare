@@ -6,7 +6,7 @@
 `default_nettype none
 
 `define BRAM_ROWS 16
-`define NUM_DIVS 33 // 31 div latency + 1 reg latency + 1 extra for spacing
+`define NUM_DIVS 32 // 31 div latency + 1 reg latency + 0 extra for spacing
 `define WIDTH 1920
 `define HEIGHT 1080
 `define FIXED_POINT 16
@@ -97,7 +97,7 @@ module Divider
     logic [47:0] out_data[0:`NUM_DIVS - 1];
     
     logic [47:0]  out_data_reg[0:`NUM_DIVS - 1];
-    logic [47:0]  out_valid_reg[0:`NUM_DIVS - 1];
+    logic         out_valid_reg[0:`NUM_DIVS - 1];
     
     // TODO: Lots of divider handling / storing / clearing logic needed
 
@@ -189,16 +189,18 @@ module Divider_Handler
      input packet dest_pixel_in,
      input wire  ready_in,
     output logic [47:0] out_0, out_1,
+    output logic ready_out,
     output packet dest_pixel_out,
      input wire clock, reset,
     output logic done);
 
-    int          in_pointer, out_pointer;
+    logic [4:0]  in_pointer, out_pointer;
     packet       dest_pixel_in_reg[0:`NUM_DIVS - 1];
     logic        done_0, done_1;
     logic        enable;
     logic        handshake;
     
+    assign ready_out = (in_pointer + 5'b1) != out_pointer;
     assign enable = 1'b1;
     assign handshake = enable & ready_in & done;
 
@@ -238,20 +240,20 @@ module Divider_Handler
 
     always_ff @(posedge clock) begin
         if(reset)
-            in_pointer <= 0;
+            in_pointer <= '0;
         else if(in_pointer == `NUM_DIVS-1 && dest_pixel_in.valid == 1'b1) 
-            in_pointer <= 0;
-        else if(dest_pixel_in.valid)
-            in_pointer <= in_pointer + 1;
+            in_pointer <= '0;
+        else if(dest_pixel_in.valid & ready_out)
+            in_pointer <= in_pointer + 5'b1;
     end
     
     always_ff @(posedge clock) begin
             if(reset)
-                out_pointer <= 0;
+                out_pointer <= '0;
             else if(out_pointer == `NUM_DIVS-1 && ready_in == 1'b1)
-                out_pointer <= 0;
+                out_pointer <= '0;
             else if(ready_in & done)
-                out_pointer <= out_pointer + 1;
+                out_pointer <= out_pointer + 5'b1;
     end
 
     ////////////////////////
@@ -268,7 +270,7 @@ module Divider_Handler
         for(v = 0; v < `NUM_DIVS; v = v + 1) begin
             if(reset) begin
                 dest_pixel_in_reg[v] = '{x:'0, y:'0, valid:'0};
-            end else if(in_pointer == v && enable == 1'b1) begin
+            end else if(in_pointer == v && enable == 1'b1 && ready_out == 1'b1) begin
                 dest_pixel_in_reg[v] <= dest_pixel_in;
             end
         end
@@ -291,12 +293,13 @@ module Multiplier_Handler
     output logic [63:0] P, 
      input wire [31:0] A, B,
      input wire request,
-    output logic done);
+    output logic done,
+     input wire ready_in);
 
     logic req_1, req_2, req_3, req_4, req_5, req_6;
     logic enable;
     
-    assign enable = 1'b1;
+    assign enable = ready_in;
 
     mult_gen_0 m(.CLK(clock), .CE(enable), .A(A), .B(B), .P(P));
 
@@ -338,7 +341,7 @@ module Transformation_Datapath
     input wire        ready_in,
     input packet      dest_pixel_in,
    output packet      dest_pixel_out,
-    input int         a, b, c, d, e, f, g, h,
+    input int         a, b, c, d, e, f, g, h, i,
     input wire  [7:0] r_source, g_source, b_source,
     input wire        valid_coords,
    output wire        read_request,
@@ -359,6 +362,8 @@ module Transformation_Datapath
     logic        div_done;
     logic        done_ax, done_by, done_dx;
     logic        done_ey, done_gx, done_hy;
+    
+    logic ready_out_from_divs;
 
     packet dest_pixel_1, dest_pixel_2, dest_pixel_3;
     packet dest_pixel_4, dest_pixel_5, dest_pixel_6;
@@ -386,7 +391,8 @@ module Transformation_Datapath
                           .A(a),
                           .B(x),
                           .request(dest_pixel_in.valid),
-                          .done(done_ax));
+                          .done(done_ax),
+                          .ready_in(ready_out_from_divs));
 
     Multiplier_Handler m1(.clock(clock),
                           .reset(reset),
@@ -394,7 +400,8 @@ module Transformation_Datapath
                           .A(b),
                           .B(y),
                           .request(dest_pixel_in.valid),
-                          .done(done_by));
+                          .done(done_by),
+                          .ready_in(ready_out_from_divs));
 
     Multiplier_Handler m2(.clock(clock),
                           .reset(reset),
@@ -402,7 +409,8 @@ module Transformation_Datapath
                           .A(d),
                           .B(x),
                           .request(dest_pixel_in.valid),
-                          .done(done_dx));
+                          .done(done_dx),
+                          .ready_in(ready_out_from_divs));
 
     Multiplier_Handler m3(.clock(clock),
                           .reset(reset),
@@ -410,7 +418,8 @@ module Transformation_Datapath
                           .A(e),
                           .B(y),
                           .request(dest_pixel_in.valid),
-                          .done(done_ey));
+                          .done(done_ey),
+                          .ready_in(ready_out_from_divs));
 
     Multiplier_Handler m4(.clock(clock),
                           .reset(reset),
@@ -418,7 +427,8 @@ module Transformation_Datapath
                           .A(g),
                           .B(x),
                           .request(dest_pixel_in.valid),
-                          .done(done_gx));
+                          .done(done_gx),
+                          .ready_in(ready_out_from_divs));
 
     Multiplier_Handler m5(.clock(clock),
                           .reset(reset),
@@ -426,7 +436,8 @@ module Transformation_Datapath
                           .A(h),
                           .B(y),
                           .request(dest_pixel_in.valid),
-                          .done(done_hy));
+                          .done(done_hy),
+                          .ready_in(ready_out_from_divs));
 
     always_ff @(posedge clock) begin
         if(reset) begin
@@ -436,7 +447,7 @@ module Transformation_Datapath
             dest_pixel_4 <= '{x:'0,y:'0,valid:'0};
             dest_pixel_5 <= '{x:'0,y:'0,valid:'0};
             dest_pixel_6 <= '{x:'0,y:'0,valid:'0};
-        end else begin
+        end else if(ready_out_from_divs) begin
             dest_pixel_1 <= dest_pixel_in;
             dest_pixel_2 <= dest_pixel_1;
             dest_pixel_3 <= dest_pixel_2;
@@ -452,7 +463,7 @@ module Transformation_Datapath
 
     assign xw = ax + by + {{32{c[31]}},c};
     assign yw = dx + ey + {{32{f[31]}},f};
-    assign  w = gx + hy + 64'h0000000001_000000; // Fixed-point 1
+    assign  w = gx + hy + {{32{i[31]}},i}; // 64'h0000000001_000000; // Fixed-point 1
 
     ///////////////////////////////////////////
     // DIVIDERS FOR HOMOGENOUS NORMALIZATION //
@@ -463,6 +474,7 @@ module Transformation_Datapath
                         .input_A_1(yw[`FIXED_POINT/2+`INT_SIZE-1:`FIXED_POINT/2]),
                         .input_B_1(w[`FIXED_POINT/2+`INT_SIZE-1:`FIXED_POINT/2]),
                         .dest_pixel_in(dest_pixel_from_mults),
+                        .ready_out(ready_out_from_divs),
                         .out_0(x_norm),
                         .out_1(y_norm),
                         .done(div_done),
@@ -509,7 +521,7 @@ module Transformation_Datapath
             dest_pixel_out_divs_reg <= '{x:'0, y:'0, valid:'0};
             dest_pixel_out <= '{x:'0, y:'0, valid:'0};
             valid_coords_reg <= '0;
-        end else begin
+        end else if(read_done) begin
             r_source_reg <= r_source;
             g_source_reg <= g_source;
             b_source_reg <= b_source;
@@ -784,7 +796,7 @@ module Keystone_Correction
 // INPUT AXI LITE //
 ////////////////////
     input wire clock, clock_en, reset,
-    input wire [31:0] H11,H12,H13,H21,H22,H23,H31,H32);
+    input wire [31:0] H11,H12,H13,H21,H22,H23,H31,H32,H33);
 
     //////////////////////
     // INTERNAL SIGNALS //
@@ -805,7 +817,7 @@ module Keystone_Correction
     int   current_x_calc, current_y_calc;
     int   done_pix_loc_x, done_pix_loc_y;
 
-    int a,b,c,d,e,f,g,h;
+    int a,b,c,d,e,f,g,h,i;
 
     packet datapath_request, datapath_answer;
 
@@ -866,7 +878,7 @@ module Keystone_Correction
                                .dest_pixel_out(datapath_answer),
                                .a(a), .b(b), .c(c), 
                                .d(d), .e(e), .f(f), 
-                               .g(g), .h(h),
+                               .g(g), .h(h), .i(i),
                                .r_source(r_out_from_bram),
                                .g_source(g_out_from_bram),
                                .b_source(b_out_from_bram),
@@ -960,13 +972,13 @@ module Keystone_Correction
 
             a <= 0; b <= 0; c <= 0;
             d <= 0; e <= 0; f <= 0;
-            g <= 0; h <= 0;
+            g <= 0; h <= 0; i <= 0;
 
         end else if(start_of_frame_in) begin
 
             a <= H11; b <= H12; c <= H13;
             d <= H21; e <= H22; f <= H23;
-            g <= H31; h <= H32;
+            g <= H31; h <= H32; i <= H33;
 
         end
     end
