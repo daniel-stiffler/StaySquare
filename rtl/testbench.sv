@@ -80,7 +80,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
                
                 correct = 1'b0;
   
-            $strobe("out: %x ans: %x",s_axis_video_tdata_out,source[pixels_out]);
+            $strobe("out: %x ans: %x",s_axis_video_tdata_out,answer[pixels_out]);
             
             
             if(~correct_reg) $strobe("DATA OUT NOT CORRECT >:(");
@@ -115,12 +115,12 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
     end
 
     initial begin
-        $readmemh("r_source.hex", r_source);
-        $readmemh("g_source.hex", g_source);
-        $readmemh("b_source.hex", b_source);
-        $readmemh("r_answer.hex", r_answer);
-        $readmemh("g_answer.hex", g_answer);
-        $readmemh("b_answer.hex", b_answer);
+        $readmemh("demo_r_source.hex", r_source);
+        $readmemh("demo_g_source.hex", g_source);
+        $readmemh("demo_b_source.hex", b_source);
+        $readmemh("demo_r_answer.hex", r_answer);
+        $readmemh("demo_g_answer.hex", g_answer);
+        $readmemh("demo_b_answer.hex", b_answer);
         aclk = 1'b0;
         aclken = 1'b1;
         aresetn = 1'b1;
@@ -139,6 +139,7 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         H32 = 32'h0;
         */
         
+        /*
         H11 = 32'b100101010111101011011111;
         H12 = 32'b0;
         H13 = 32'b11111101;
@@ -148,6 +149,17 @@ Keystone dut(.s_axis_video_tdata_in(s_axis_video_tdata_in),
         H31 = 32'b0;
         H32 = 32'b11111111111111111111011000011001;
         H33 = 32'b100101010111101011011111;
+        */
+        
+        H11 = 32'd9907479;
+        H12 = 32'd0;
+        H13 = 32'd2;
+        H21 = 32'd0;
+        H22 = 32'd9822719;
+        H23 = 32'd0;
+        H31 = 32'd0;
+        H32 = 32'd608;
+        H33 = 32'd9318318;
         
         forever #5 aclk = ~aclk;
     end

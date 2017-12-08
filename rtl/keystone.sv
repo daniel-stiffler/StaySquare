@@ -194,13 +194,13 @@ module Divider_Handler
      input wire clock, reset,
     output logic done);
 
-    logic [4:0]  in_pointer, out_pointer;
+    int          in_pointer, out_pointer;
     packet       dest_pixel_in_reg[0:`NUM_DIVS - 1];
     logic        done_0, done_1;
     logic        enable;
     logic        handshake;
     
-    assign ready_out = (in_pointer + 5'b1) != out_pointer;
+    assign ready_out = ((in_pointer + 5'b1) != out_pointer) && !(in_pointer == `NUM_DIVS-1 && out_pointer == 0);
     assign enable = 1'b1;
     assign handshake = enable & ready_in & done;
 
@@ -240,20 +240,20 @@ module Divider_Handler
 
     always_ff @(posedge clock) begin
         if(reset)
-            in_pointer <= '0;
-        else if(in_pointer == `NUM_DIVS-1 && dest_pixel_in.valid == 1'b1) 
-            in_pointer <= '0;
+            in_pointer <= 0;
+        else if(in_pointer == `NUM_DIVS-1 && dest_pixel_in.valid == 1'b1 && ready_out) 
+            in_pointer <= 0;
         else if(dest_pixel_in.valid & ready_out)
-            in_pointer <= in_pointer + 5'b1;
+            in_pointer <= in_pointer + 1;
     end
     
     always_ff @(posedge clock) begin
             if(reset)
-                out_pointer <= '0;
-            else if(out_pointer == `NUM_DIVS-1 && ready_in == 1'b1)
-                out_pointer <= '0;
+                out_pointer <= 0;
+            else if(out_pointer == `NUM_DIVS-1 && ready_in == 1'b1 && done == 1'b1)
+                out_pointer <= 0;
             else if(ready_in & done)
-                out_pointer <= out_pointer + 5'b1;
+                out_pointer <= out_pointer + 1;
     end
 
     ////////////////////////
@@ -498,7 +498,7 @@ module Transformation_Datapath
     ////////////////////////
 
     assign x_result = x_round +  `WIDTH / 2;
-    assign y_result = y_round + `HEIGHT / 2;
+    assign y_result = y_round + `HEIGHT / 2 + 20; // Shift to center
 
     ////////////////////
     // MEMORY HANDLER //
