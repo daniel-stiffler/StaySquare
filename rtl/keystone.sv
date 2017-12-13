@@ -6,7 +6,7 @@
 `default_nettype none
 
 `define BRAM_ROWS 16
-`define NUM_DIVS 32 // 31 div latency + 1 reg latency + 0 extra for spacing
+`define NUM_DIVS 34 // 31 div latency + 1 reg latency + 2 extra for spacing
 `define WIDTH 1920
 `define HEIGHT 1080
 `define FIXED_POINT 16
@@ -717,7 +717,7 @@ endmodule: Input_BRAM_Controller
 //                                             //
 /////////////////////////////////////////////////
 module Queue
-  (output logic [63+1:0] out,
+  (output logic [63:0] out,
    output logic valid,
     input wire  [63+1:0] in,
     input wire  put, get,
@@ -769,6 +769,60 @@ module Queue
 
 endmodule: Queue
 
+//////////////////////////////////////////////////
+//                                              //
+// P Queue module for output buffering packets. //
+//                                              //
+//   - Holds 32 packets of packet size each.    //
+//   - Combinational read, synchronous write.   //
+//                                              //
+//////////////////////////////////////////////////
+module P_Queue
+  (output packet out,
+    input packet in,
+    input wire  put, get,
+    input wire  clock, reset);
+    
+    logic full, empty;
+
+    logic [4:0] put_pointer, get_pointer;
+    packet q[0:31];
+
+    assign out = (get & put & empty) ? in : q[get_pointer];
+    
+    assign empty =   (put_pointer         == get_pointer);
+    assign full  = (((put_pointer + 5'b1) == get_pointer) && (get == 1'b0));
+
+    always_ff @(posedge clock) begin
+        if(reset) begin
+            put_pointer <= '0;
+            get_pointer <= '0;
+        end else if( get & ~put & ~empty) begin
+            get_pointer <= get_pointer + 1;
+        end else if(~get &  put &  ~full) begin
+            put_pointer <= put_pointer + 1;
+        end else if( get &  put &  empty) begin
+            put_pointer <= put_pointer + 0;
+            get_pointer <= get_pointer + 0;
+        end else if( get &  put & ~empty) begin
+            put_pointer <= put_pointer + 1;
+            get_pointer <= get_pointer + 1;
+        end
+    end
+
+    int i;
+    always_ff @(posedge clock) begin
+        for(i = 0; i < 32; i = i + 1) begin
+            if(reset) begin
+                q[i] <= '{x:'0,y:'0,valid:'0};
+            end else if(i == put_pointer && put == 1'b1 && full == 1'b0) begin
+                q[i] <= in;
+            end
+        end
+    end
+
+endmodule: P_Queue
+
 ////////////////////////////////////////////////////////////
 //                                                        //
 // Keystone Correction module determines new pixel colors //
@@ -819,7 +873,7 @@ module Keystone_Correction
 
     int a,b,c,d,e,f,g,h,i;
 
-    packet datapath_request, datapath_answer;
+    packet datapath_request, datapath_answer, queue_packet_out;
 
     /////////////////////////////////////
     // PARSE PIXEL COLOR DATA FROM BUS //
@@ -998,26 +1052,25 @@ module Keystone_Correction
              .full(queue_full),
              .clock(clock),
              .reset(reset));
+             
+    P_Queue q1(.out(queue_packet_out),
+               .in(datapath_answer),
+               .put(datapath_answer.valid),
+               .get(ready_in),
+               .clock(clock),
+               .reset(reset));
 
     ///////////////////////////
     // OUTPUT TIMING SIGNALS //
     ///////////////////////////
 
-    logic last_valid;
-    int outputting_x;
-
-    assign start_of_frame_out = (valid_out & ~last_valid);
-    assign end_of_line_out = ((valid_out == 1'b1) && (outputting_x == `WIDTH-1));
-
-    always_ff @(posedge clock) begin
-        if(reset) last_valid <= 0;
-        else      last_valid <= valid_out;
-    end
-
-    Counter #(32) ox(.value(outputting_x),
-                     .reset(reset),
-                     .clock(clock),
-                     .clear(end_of_line_out),
-                     .incr(valid_out));
+    assign start_of_frame_out = (valid_out == 1'b1 && 
+                                  ready_in == 1'b1 && 
+                           queue_packet_out.x == 0 && 
+                           queue_packet_out.y == 0);
+                           
+    assign end_of_line_out = (valid_out == 1'b1 && 
+                               ready_in == 1'b1 && 
+                     queue_packet_out.x == `WIDTH-1);
 
 endmodule: Keystone_Correction
