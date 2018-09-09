@@ -210,9 +210,10 @@ def apply_transformation(H, img_name):
             yp = int(round(mapped_coor[1, 0]))
             zp = int(round(mapped_coor[2, 0])) # Must be 1
 
-            # The load() function creates a matrix indexed [x][y] instead of [y][x]
-            # Swap the locations of x and y when indexing to compensate. Yuck!
-            display[min(x+100,width_dest-1), min(y+100,height_dest-1)] = tuple(source_mat[yp, xp]) if 0 <= yp < height and 0 <= xp < width else (0, 0, 0)
+            if 0 <= yp < height and 0 <= xp < width:
+                display[x, y] = tuple(source_mat[yp, xp])
+            else:
+                display[x, y] = tuple(0, 0, 0)
 
     dest.save("images" + os.sep + "trans_" + img_name, "PNG")
 
@@ -227,7 +228,7 @@ def main():
             (0.0, 0.0), (0.0, 512.0),
             (512.0, 0.0), (512.0, 512.0),
             ]
-            
+
     screen_coors = []
     # For each coordinate in `proj_coors`, determine its mapping to the screen
     # using one of the appropriate functions
